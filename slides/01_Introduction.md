@@ -111,7 +111,7 @@ Having to write some repetitive code more than once is a sign of impending disas
 When some code is repeated, a tool for doing it without writing too much code is needed. The more it is used, the more complex it can be (in that case, automated tests are needed). Not having to write repetitive code when using it can justify using repetitive code when writing it.
 ```C++
 class ComponentInformation : public Serialisable {
-  int id = key("id);
+  int id = key("id");
   std::string name = key("id");
   Version version = key("version);
   // ...
