@@ -113,7 +113,7 @@ When some code is repeated, a tool for doing it without writing too much code is
 class ComponentInformation : public Serialisable {
   int id = key("id");
   std::string name = key("id");
-  Version version = key("version);
+  Version version = key("version");
   // ...
 };
 ```
