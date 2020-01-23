@@ -380,6 +380,8 @@ serialise("id", saved.id);
 serialise("rating", saved.rating);
 ```
 
+Note: Parametres can be declared as `auto` even in inline functions.
+
 ---
 ### Exercise
 Improve this code:
@@ -419,6 +421,98 @@ delay(50);
 clear(i);
 NumberFive(i);
 delay(50);
+```
+
+---
+### Exceptions
+Don't shun exceptions.
+```C++
+Result<PowerSystem> getOutputVoltage(double& voltage) const {
+  Result<BV13> result = _generator->getOutputVoltage(voltage);
+  return {
+    result.summary(),
+    (result.code() == BV13::Results::Ok) ? Results::Ok : Results::HardwareError,
+    result.brief(),
+    result.details(),
+    result.notes()
+  };
+}
+```
+```C++
+double getOutputVoltage() const {
+  return _generator->getOutputVoltage();
+}
+```
+Avoid unnecessary error codes like a plague, for they will spread.
+
+---
+Exceptions are not your enemy.
+```C++
+Result<PowerManagement> getAverageVoltage(double& voltage) const {
+  double total = 0;
+  for (auto& system : _powerSystems) {
+    double voltageThere;
+    auto result = system->getOutputVoltage(voltageThere);
+    if (result.code() != PowerSystem::Results::Ok)
+      return Result<PowerManagement>{ "A system failed", Results::HardwareFailure, "Fail", "", "" };
+    total += voltageThere;
+  }
+  voltage = total / _powerSystems.size();
+  return Result<PowerManagement>{ "Success", Results::Ok, "Ok", "", "" };
+}
+```
+```C++
+double getAverageVoltage() const {
+  double total = 0;
+  for (auto& system : _powerSystems)
+    total += system->getOutputVoltage();
+  return total / _powerSystems.size();
+}
+```
+
+---
+Without exceptions:
+* The logic is much more complex
+* Additional operations have to be done at runtime even if everything is okay
+* Details about problems are often lost
+* Failures often pass unnoticed
+
+With exceptions:
+* Far less code
+* More intuitive code (return value is the value we wanted to get)
+* No runtime overhead if everything is okay
+* All problems can be appropriately reported in a central hub or caught by a debugger
+
+---
+Downsides of exceptions:
+* If one is raised, the cost is high
+* Implementation is compiler-dependent and messy
+* Functions may exit at counter-intuitive locations, causing resource leaks if resources don't have proper destructors
+
+---
+Use exceptions when:
+* There is a chance of failure, unlikely enough to need special treatment but likely enough to have consequences if ignored
+* If a programming error elsewhere would cause hard-to-debug undefined behaviour
+* To deal with incorrect use of the program
+
+_Don't_ use exceptions when:
+* If it is part of a use case
+* If it is thrown too often in the context
+
+Use them as often as possible without making it annoying to run the program in a debugger set to pause on all exceptions.
+
+---
+And when using exceptions, don't abuse the possibility to throw any type:
+* All eceptions should inherit from `std::exceptions`
+* If the error happens due to external circumstances, throw `std::runtime_error` or better, an exceptions that inherits from it
+* If the error happens due to programming errors, throw `std::logic_error`
+
+This way, you won't have to resort to using `catch(...)`, which doesn't allow reporting what actually happened. The overhead of constructing exceptions and analysing them is neglectful compared to the overhead of throwing them.
+
+```C++
+struct PowerError : std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
 ```
 
 ---

@@ -82,7 +82,7 @@ If a class serves to give some kind of managed access to another class, accessin
 ```C++
 if (plasmaMirror->temperature() > settings.maxTemperature()) {
 ```
-The `plasmaMirror` variable's contents holds a class representing a device. When the `->` operator is called, the variable can be internally replaced with up-to-date values and then returned, so that nobody would forget calling some kind of update method (and not to write them everywhere).
+The `plasmaMirror` variable's contents may hold a class that represents a device. When the `->` operator is called, the variable can be internally replaced with up-to-date values and then returned, so that nobody would forget calling some kind of update method (and not to write them everywhere).
 
 ---
 It can be used to track updates to some value.
@@ -129,12 +129,173 @@ robot->orientation[Orientation::X] = plan.now().x;
 ---
 ### Exercice:
 Write a class that holds another class and counts the numner of times it is accessed.
-
 ```C++
 properties->speed = 12;
 properties->velocity = 12;
 std::cout << properties.timesAccessed() << std::endl;
 ```
 
+---
 ## Assignment operator
-_TBA_
+As you all probably know, the assignment operator is commonly overloaded for custom copying or moving objects into existing ones.
+```C++
+void rename(const std::string& newName) {
+    _name = newName;
+}
+```
+However, it has plenty of other uses.
+
+---
+Suppose that structures like this are used extensively in the code:
+```C++
+settings.location.coordinates = coordinates;
+settings.user_location.city = city;
+settings.time.zone = timeZone(city);
+```
+The circumstances are that it would be far more convenient to use this instead:
+```C++
+settings.coordinates = coordinates;
+settings.city = city;
+settings.zone = timeZone(city);
+```
+But you need to assign some kind of `Location` object into `settings.location` as well. Same for other subsets of settings.
+
+---
+A possible way to do it is not to make the class a composition and allow assigning those `Location` objects into the class itself:
+```C++
+Settings& operator=(const Location& location) {
+    coordinates = location.coordinates;
+    navigationDatabaseEntry = location.navigationdatabaseEntry;
+    altitude = location.altitude;
+    return *this;
+}
+```
+This doesn't even have to be written explicitly if the `Settings` class inherits from `Location` and other classes that represent subsets of the settings:
+```C++
+struct Settings : Location, UserLocation, Time, HotDogBrand {
+```
+
+---
+The assignment operator really shines when used in combination with the conversion operator.
+
+---
+## Conversion operator
+The most common use of the conversion operator to allow conveniently checking if some state is valid:
+```C++
+struct Laser {
+    //...
+    operator bool() {
+        return isInitialised() && powerGood() && authorised();
+    }
+};
+```
+```C++
+if (laser) {
+    laser.minChargup(10);
+    laser.fire();
+}
+```
+Note: The syntax is somewhat unusual, because the return value is specified after the `operator` keyword rather than before.
+
+---
+It can be used to create an imitation of another type that silently performs additional operations used:
+```C++
+class FakeInt {
+    int main;
+    int uses = 0;
+public:
+    operator int() {
+        uses++;
+        return main;
+    }
+};
+```
+This will be implicitly converted to `int` when arithmetic operations are performed.
+
+Be wary not to copy this into an `auto` variable, because you will end up with two trackers that will both act as `int`. You can make this class uncopiable.
+
+---
+Together with the assignment operator, it can be used as a proxy to a variable that may need to be accessed in a special way (different format, mutex, different computer):
+```C++
+class FakeDouble {
+    std::shared_ptr<int64_t> _proxy;
+    double _scale;
+public:
+    operator double() {
+        return *_proxy * _scale;
+    }
+    double operator=(double assigned) {
+        *_proxy = assigned / _scale;
+        return assigned;
+    }
+};
+```
+This doesn't enable `operator +=`, `operator -=` and similar, but that isn't what you want to do, as every assignment has an invisible overhead.
+
+---
+### Exercice:
+Create a class that can be used as a float, but yields a different random value in the range betwen 0 and 1 whenever used in arithmetic.
+```C++
+float upToTwo = unpredictable * 2;
+float upToThree = unpredictable * 3;
+```
+
+---
+## Generic conversion operator
+This is where it's possible to deduce the return value of a function.
+```C++
+struct MakeSmart {
+    template<typename T>
+    operator std::shared_ptr<T>() {
+        return std::make_shared<T>();
+    }
+
+    template<typename T>
+    operator std::unique_ptr<T>() {
+        return std::make_unique<T>();
+    }
+};
+```
+```C++
+std::unique_ptr<QPushButton> button = MakeSmart();
+std::shared_ptr<std::string> edited = MakeSmart();
+```
+You can try it [online](https://repl.it/repls/IllCorruptCharacters).
+
+---
+The generic conversion operator allows using a single short symbol without template arguments to initialise a lot of different types, possibly supplying them with various arguments the class holds as members.
+
+It is very prone to ambiguous function call issues, especially with MSVC that generally lacks in compliance to standards. You will need SFINAE to prevent the unwanted conversions from matching.
+
+---
+## Conversion constructor
+While conversion operator converts a given class to various, often impossible to extend classes, the conversion constructor converts any classes to a given class.
+
+The syntax is relatively common:
+```C++
+SuperPointer(const std::shared_ptr<T>& set) {
+```
+This one can be used to convert shared pointers implicitly to the `SuperPointer` class:
+```C++
+void processString(std::shared_ptr<std::string> stringValue) {
+    SuperPointer<std::string> string = stringValue;
+```
+This will convert shared pointer to `SuperPointer`, so that the assignment operator would work on it.
+
+---
+Implicit conversions may apply recursively, which can lead to unwanted conversions to completely different classes. Use the `explicit` keyword with the constructor to prevent it.
+
+To allow wide ranges of conversions, a templated version of conversion operator can be used. In that case, SFINAE can be used to prevent too many possible conversions, possibly leading to ambiguities.
+
+---
+## Homework
+Create three classes that behave like integer, float and string. They all inherit from a common ancestor and override its methods for serialisation and deserialisation (JSON, XML, whatever you like). Create a class that can be used to initialise them all, setting an object where their properties should be saved when a class that contains them is serialised.
+
+```C++
+Electrocard::Electrocard(const nlohmann::json& configuration) :
+    configurator(this, configuration, "electrocard"),
+    frequency(configurator),
+    maxVoltage(configurator),
+    waveform(configurator),
+    runMode(configurator),
+```
