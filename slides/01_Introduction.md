@@ -9,7 +9,7 @@ The opposite of DRY is We Enjoy Typing or Write Everything Twice. The WET princi
 
 ---
 ### More work
-You can use copy-paste. Every single line has to be edited:
+You can use copy-paste. In this case, every single line has to be edited:
 ```C++
 lenses[0].current = 0;
 lenses[1].current = 0;
@@ -37,7 +37,7 @@ if (entry->has_child("description"))
   description = entry->get_child("descirption").contents();
 // ...
 ```
-Bonus, how do you change it to `nlohmann::json`? If you are smart, you might succeed with a bunch of Find&Replace... if the code is this simple.
+Bonus, how do you change it to `nlohmann::json`? If you are smart, you might succeed with a bunch of Find&Replace... supposing the code is this simple.
 
 ---
 ### Error prone
@@ -47,7 +47,7 @@ std::string description;
 if (entry->has_child("description"))
   description = entry->get_child("descirption").contents();
 ```
-It's also very easy to forget to paste the `"description"` string there.
+It's also very easy to forget to paste the `"description"` string over whatever that was pasted.
 
 ---
 ### Atrocious to use
@@ -108,7 +108,7 @@ A single duplication is not a big deal and fixing it may not even be worth the e
 Having to write some repetitive code more than once is a sign of impending disaster.
 
 ---
-When some code is repeated, a tool for doing it without writing too much code is needed. The more it is used, the more complex it can be (in that case, automated tests are needed). Not having to write repetitive code when using it can justify using repetitive code when writing it.
+When some code is repeated, a tool for doing it without writing too much code is needed. The more it is used, the more complex it can be (in that case, automated tests are needed). Not having to write repetitive code when using it can justify using repetitive code when implementing it.
 ```C++
 class ComponentInformation : public Serialisable {
   int id = key("id");
@@ -143,7 +143,7 @@ Stuff we will learn:
   * Less future errors to deal with
 * A lot of C++ tricks to achieve unusual functionality
 
-Stuff we will **not** learn:
+Stuff that will **not** be covered:
 * Advanced algorithms
 * Optimising code for speed
 * Code style
@@ -283,8 +283,7 @@ The sequence of LEDs is 0, 1, 3, 6, 8, 7, 5, 2, so a `for` cycle may seem somewh
 ---
 But it's too bad without a cycle. A quick thought is enough to figure out how to use one:
 ```C++
-std::array<int, 8> order = {0, 1, 3, 6, 8, 7, 5, 2};
-for (int i : order) {
+for (int i : {0, 1, 3, 6, 8, 7, 5, 2}) {
   analogWrite(LED[i], brightness);
   delay(lightTime);
   analogWrite(LED[i], 0);
@@ -294,29 +293,13 @@ for (int i : order) {
 
 However, you should not exaggerate it:
 ```C++
-std::array<int, 8> order = {0, 1, 3, 6, 8, 7, 5, 2};
-for (int i : order) {
+for (int i : {0, 1, 3, 6, 8, 7, 5, 2}) {
   for (int j = brightness; j >= 0; j -= brightness) {
     analogWrite(LED[i], j);
     delay(lightTime);
   }
 }
 ```
-
----
-A `std::vector` can be used instead of a `std::array` to avoid having to write the size, but it needs dynamic allocation and is thus slower. Depending on the situation, it could be better this way:
-
-```C++
-std::vector<int> order = {0, 1, 3, 6, 8, 7, 5, 2};
-for (int i : order) {
-  analogWrite(LED[i], brightness);
-  delay(lightTime);
-  analogWrite(LED[i], 0);
-  delay(lightTime);
-}
-```
-
-The original code was for Arduino, so using a `std::vector` was not very suitable.
 
 ---
 ### Lambda functions
@@ -329,7 +312,7 @@ XML::Element* briefElem = new XML::Element("brief");
 briefElem->setContents(saved.brief);
 retval->addElement(briefElem);
 XML::Element* versionElem = new XML::Element("version");
-versionElem->setContents("v" + saved.version);
+versionElem->setContents(saved.version);
 retval->addElement(versionElem);
 XML::Element* authorElem = new XML::Element("author");
 authorElem->setContents(saved.author);

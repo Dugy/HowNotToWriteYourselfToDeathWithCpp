@@ -225,7 +225,7 @@ auto sum(T arg, Others... rest) {
         return arg; // Base case
 }
 ```
-Notice that `sum()` cannot be called with no arguments, so the first branch cannot compile when `sum` is called with a single argument. However, that is not a problem, because `if constepxr` tries to compile that branch only if there is at least one argument.
+Notice: `sum()` cannot be called with no arguments, so the first branch cannot compile when `sum` is called with a single argument. However, that is not a problem, because `if constepxr` tries to compile that branch only if there is at least one argument.
 
 ---
 It is possible to infer some properties of the types of the variables used:

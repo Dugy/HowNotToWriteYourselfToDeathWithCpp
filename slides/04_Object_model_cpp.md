@@ -3,6 +3,8 @@ Most of nowadays' popular programming languages have some sort of classes and in
 
 C++ does not distinguish between interfaces and regular classes and allows multiple inheritance even from parents with the same ancestor. Features to deal with all the pitfalls are provided, but they are not always so straightforward.
 
+The possibility of multiple inheritance allows better adherence to SOLID principles and thus avoid further code duplication and technical debt. Avoiding multiple inheritance because some corporations say so is to follow the LIQUID principles (Low in Quality, Unmatched in Despair).
+
 ---
 ## Constructor and destructor
 
