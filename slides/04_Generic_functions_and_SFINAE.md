@@ -1,4 +1,4 @@
-# 2. Generic Functions and SFINAE
+# 4. Generic Functions and SFINAE
 These allow you to write code once and apply it to all types.
 ```C++
 auto secondPower(auto number) {
@@ -7,7 +7,7 @@ auto secondPower(auto number) {
 ```
 This simple case replaces a macro that would, in case of an error, never show a proper line where the issue happened.
 
-Note: `pow(number, 2)` calls a universal algorithm for computing power, which is slower than multiplication (premature pessimisation).
+Note: `pow(number, 2)` may execute a universal algorithm for computing power, which is slower than multiplication (premature pessimisation).
 
 ---
 To add more constraints to the types, templated types can be explicitly stated:
@@ -158,7 +158,7 @@ class Drill : public Binder {
 ```
 
 ---
-## Variaditic template
+## Variadic template
 The `typename...` argument can stand for a comma-separated list of any number of arguments (including 0). It always has to be expanded with `...` when used:
 ```C++
 class LaserWeldingRobot : public Robot {
@@ -357,6 +357,33 @@ made.serialise("author", author); // std::shared_ptr<std::string>
 made.serialise("rating", rating); // float
 made.serialise("comment", comment); // std::unique_ptr<std::string>
 ```
+
+---
+## Generic conversion operator
+This is where it's possible to deduce the return value of a function.
+```C++
+struct MakeSmart {
+    template<typename T>
+    operator std::shared_ptr<T>() {
+        return std::make_shared<T>();
+    }
+
+    template<typename T>
+    operator std::unique_ptr<T>() {
+        return std::make_unique<T>();
+    }
+};
+```
+```C++
+std::unique_ptr<QPushButton> button = MakeSmart();
+std::shared_ptr<std::string> edited = MakeSmart();
+```
+You can try it [online](https://repl.it/repls/IllCorruptCharacters).
+
+---
+The generic conversion operator allows using a single short symbol without template arguments to initialise a lot of different types, possibly supplying them with various arguments the class holds as members.
+
+It is very prone to ambiguous function call issues, especially with MSVC that generally lacks in compliance to standards. You will need SFINAE to prevent the unwanted conversions from matching.
 
 ---
 ## Homework

@@ -1,9 +1,63 @@
-# 4. Object model in C++
+# 2. Object model in C++
 Most of nowadays' popular programming languages have some sort of classes and inheritance. As with nearly everything else, C++ goes further.
 
 C++ does not distinguish between interfaces and regular classes and allows multiple inheritance even from parents with the same ancestor. Features to deal with all the pitfalls are provided, but they are not always so straightforward.
 
-The possibility of multiple inheritance allows better adherence to SOLID principles and thus avoid further code duplication and technical debt. Avoiding multiple inheritance because some corporations say so is to follow the LIQUID principles (Low in Quality, Unmatched in Despair).
+---
+## Class types
+There are four types of classes:
+* Value class - holds several values, may have methods to manipulate its own data
+* Polymorphic class - has a lot of functionality, polymorphic classes hold most of the program's code (it does not need to be literally polymorphic to belong here)
+* Manager class - manages the access and lifetime of other objects
+* Relationship class - defines a relationship between objects, not usable alone and owns nothing
+
+Sometimes, a class does not belong into any of those, but it's rare. C++ is somewhat designed to determine where does the class belong and generate copy/move constructor/assignment operators appropriately.
+
+**Exercice:** Where do belong the following classes? `std::string`, `std::vector`, `std::vector::iterator`, `std::ifstream`, `std::thread`
+
+---
+## SOLID principles and when to violate them
+SOLID principles are rules of thumb that help avoid later code duplication and technical debt.
+* Single Responsibility Principle - the hardest to maintain, the easiest to violate
+* Open-Closed Priciple - encapsulation, usually a no brainer
+* Liskov Substitution Principle - violated when a parent class reveals what subclass it is, not trivial to violate, troublesome if violated
+* Interface Segregation Principle - not very different from Single Responsibility Principle
+* Dependency Inversion Principle - needs forward declarations to violate, so be careful with them
+
+Obeying them completely or ignoring them leads to the LIQUID principles (Low in Quality, Unmatched in Despair).
+
+---
+### Single Responsibility / Interface Segregation Principle
+Once your program has a lot of classes, they will often share a lot of functionality. Any shared functionality implies they should have a common parent that provides that functionality. Code that is duplicated across multiple files is extremely difficuly and bug prone to change. But you probably know this. But it can get more complex.
+
+---
+Some of following advice can be happily ignored if the code is performance critical.
+* It happens that the implementation of some interface is a couple of one-liners - consider implementing them in the parent class and set the parameters returned or references to them in the constructor
+* It happens that a part of the functionality is common among many children, but not all - depending on the situation, either give the parent a default implementation or create a class between the children and the parent that implements this sometimes shared functionality
+* It happens that child methods share some functionality - depending on the situation, either make it a method of the parent class that calls a virtual method specialised by children or a make the childen's methods call a parent method under different conditions
+* It happens that some functionality is repeated within one class - use composition, calls may contain more symbols, but it will be possible to iterate over these parts or use lambdas to benefit from the shared functionality also when using the class
+
+---
+Single responsibility principle also applies to functions, if some of them share certain functionality or some part of a functionality is somewhat separate, there should be an additional function that provides it and is called internally.
+
+If some program parts separated because of the Single Responsibility Principle are used together often, don't hesitate to join them. If a pair of functions is called often in sequence but sometimes individually, create a function that calls them both. If it happens too often that a class inherits from the same group of classes, feel free to create a class that inherits from that group of classes and inherit only from that one.
+
+---
+### Dependency Inversion Principle
+It means simply that if class A is used by class B, no class used by class A should use class B. It's not possible without forward declaration anyway. Violating this rule causes longer compilation times and leads to further violations of SOLID principles.
+
+However, it happens that object A needs to use object B while object B uses object A. It can usually be solved by changing the program's structure:
+* You can have three classes. Class A is used by class B, class B is used by class C that also inherits from A.
+* When class B uses class A, it inserts a lambda (wrapped in `std::function`) into it and class A calls it
+
+---
+### When to violate them
+* Value classes rarely need encapsulation. Any class with too many setters and getters is badly designed and may need a value class with all the properties accessed by a single function (it may also be a private parent class).
+* Manager and relationship classes can have circular dependencies. It often happens that such a class is used logically as one class, but in the program, it's actually a group of classes. A group of cooperating classes should use the `friend` declaration to access each other's private members, keeping them inaccessible to everything outside.
+* Adherence to the Single Responsibility Principle can also be overdone. If too much code is needed to separate what seems to be two responsibilities, they might not really be two responsibilities. Small functionality can also be repeated if more code is needed to use it than to reimplement it.
+
+---
+Basically any rule can be violated if it will sufficiently shorten the code, but these violations should be properly documented, encapsulated and combined with compile time and run time checks to prevent accidental misuse
 
 ---
 ## Constructor and destructor
@@ -29,7 +83,22 @@ A destructor is called:
 ```
 
 ---
-Both constructor and destructor can be avoided by creating a different object like `std::array<uint8_t, sizeof(A)>` (with appropriate size) and using `reinterpret_cast` to get a reference to the actual object. This is rarely useful. Possible uses are writing a vector-like structure (for exaomple for vectorising tree-like structures), creating custom allocators and such.
+Since C++11, a constructor can call (delegate) other constructors of the same class. This is useful when there are many constructors that aren't simple enough. Typically, this leads to implementing additional constructor functionality to one constructor and having other constructors delegate it.
+
+---
+Both constructor and destructor can be avoided by creating a different object like `std::array<uint8_t, sizeof(A)>` (with appropriate size) and using `reinterpret_cast` to get a reference to the actual object. This is rarely useful. Possible uses are writing a vector-like structure (for example for vectorising tree-like structures), creating custom allocators and such.
+
+```C++
+struct A {
+  int a;
+  int b;
+  A(int a) : a(a), b(2) {
+  }
+  A() : A(1) {}
+};
+```
+
+A less known fact is that in the initialisation section, only parent classes and members can be initialised, so constructor arguments can have the same names as members even if arguments take precedence over member names. However, this might not be the best idea for long constructors, because any attempts to change members after the initialisation will change only the arguments (some compilers warn about it).
 
 ---
 A constructor can be called on a prepared area of memory using the so called _in-place constructor._
@@ -109,6 +178,10 @@ To completely prevent a constructor from being called, use the `delete` keyword:
 This will make the object impossible to create (instances can be faked with `reinterpret_cast`).
 
 ---
+### Exercise
+Write a class that manages parallel access to another class. It uses a `std::shared_mutex` to offer a method that provides const access the object it manages (one method) or another method that provides modifiable access.
+
+---
 ## Default value
 This can be allowed to change the way members are constructed by the default or custom constructor (not copy or move):
 ```C++
@@ -162,7 +235,7 @@ virtual void iAmBack() {
     _id = "Imperator Tiberius Iulius II";
 }
 ```
-It's necessary to avoid hard to extend constructs like this:
+It's essential when avoiding hard to extend constructs like this:
 ```C++
 void iAmBack() {
     if (_id == "Imperator Trullus Gaelicius")
@@ -212,3 +285,14 @@ Suppose that a very commonly used class `A` has a virtual method. Another common
 In this case, it's suitableto use a mixin. A mixin class `C` would inherit from `A` and implement the virtual method. If a class `D` inherits from `B` and `C`, it receives the virtual method from `A`'s implementation from `C`. All inheritance must be virtual in this case.
 
 Try it out [here](https://repl.it/repls/DelectableSmartLight)
+
+---
+### Homework
+You have a base class called `Device` that manages access to a hardware device connected through some protocol. There is a group of devices that have random subsets of these capabilities:
+* Device has accessible EEPROM memory with some internal data stored as pairs of strings (or whatever else as it fits you)
+* Device can measure its chip temperature
+* Device has a certain output voltage set and can measure its real output voltage and current
+* Device amplifies a signal according to the requested amplification
+* Device manages other devices
+
+Implement a simple imitation of the `Device` classes as it fits you. Then create classes for the specific hardware properties that use the `Device` class to provide methods for setting values on devices. Finally, implement a classes representing specific devices that have subsets of these capabilities inheriting from their respective classes.

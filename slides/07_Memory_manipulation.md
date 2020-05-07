@@ -143,7 +143,7 @@ A custom smart pointer acting like a unique pointer needs:
 * A destructor conditionally deleting contents
 
 ---
-A custom smart poiter acting like a shared pointer needs:
+A custom smart pointer acting like a shared pointer needs:
 * A reference counter that starts at 1
 * Overloads that guarantee that with each copy increments the reference counter
 * Overloads that guarantee that each destruction or overwrite decrements the reference counter and deletes the object if it reaches zero
@@ -151,6 +151,8 @@ A custom smart poiter acting like a shared pointer needs:
 This is more complex than if it was acting like a unique pointer, but it usually allows greater convenience, as it allows the object to be moved around without regard for the ownership or deallocation.
 
 An example of using a custom smart pointer for a copy-on-write string can be found [here](https://repl.it/repls/FoolhardyCluelessWaterfall).
+
+If you need additional operators (more ways of dereferencing or something), you may overload the rarely used operator `->*`.
 
 ---
 ## Endianness

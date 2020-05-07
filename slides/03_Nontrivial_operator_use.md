@@ -45,7 +45,7 @@ safetyButton.setCallback([this] {
 ```
 
 ---
-Functors are often expected as function arguments to functions that expect something to be called from their bodies. Assuming they would be given classes with methods with some names would make them counter-intuitive.
+Functors are often expected as function arguments to functions that expect something to be called from their bodies. Having to implement an interface for each function call would be annoying.
 ```C++
 data.erase(std::remove_if(data.begin(), data.end(), [] (Value* val) {
     return val->errors() != std::string::npos;
@@ -53,7 +53,7 @@ data.erase(std::remove_if(data.begin(), data.end(), [] (Value* val) {
 ```
 
 ---
-Like all functions, operator overloads can be overloaded for different argument types. Unlike any other operator, the function call operator can have any number of arguments.
+Like all functions, overloaded operators can have overloads for different argument types. Unlike any other operator, the function call operator can have any number of arguments.
 ```C++
 // Some class, named Serialiser or something
 void operator() (std::string& value, const std::string& name) {
@@ -90,7 +90,7 @@ It can be used to track updates to some value.
 if (plasmaMirror->canMoveX())
     plasmaMirror.edit()->setOrientationX(plasmaMirror->orientationX() - change);
 ```
-In this case, the `plasmaMirror` variable is some class wrapping a class, giving const access to it using the `->` operator and a non-const access using the `edit()` method that does some side-effect, for example marking some config file as dirty and in need of update when the program exits.
+In this case, the `plasmaMirror` variable is some class wrapping a class, giving const access to it using the `->` operator and a non-const access using the `edit()` method that does some side-effect, for example marking some config file as dirty and in need of update when the program exits. If you need a dereference-like operation that takes an argument, you can overload the `->*` operator.
 
 ---
 The dereference operator is a rather special one because it also eats up the dot operator on the class it outputs. Therefore, it's necessary for it to return a pointer to a class or something that has an overloaded dereference operator itself.
@@ -128,7 +128,7 @@ robot->orientation[Orientation::X] = plan.now().x;
 
 ---
 ### Exercice:
-Write a class that holds another class and counts the numner of times it is accessed.
+Write a class that holds another class and counts the number of times it is accessed.
 ```C++
 properties->speed = 12;
 properties->velocity = 12;
@@ -241,61 +241,32 @@ float upToThree = unpredictable * 3;
 ```
 
 ---
-## Generic conversion operator
-This is where it's possible to deduce the return value of a function.
-```C++
-struct MakeSmart {
-    template<typename T>
-    operator std::shared_ptr<T>() {
-        return std::make_shared<T>();
-    }
-
-    template<typename T>
-    operator std::unique_ptr<T>() {
-        return std::make_unique<T>();
-    }
-};
-```
-```C++
-std::unique_ptr<QPushButton> button = MakeSmart();
-std::shared_ptr<std::string> edited = MakeSmart();
-```
-You can try it [online](https://repl.it/repls/IllCorruptCharacters).
-
----
-The generic conversion operator allows using a single short symbol without template arguments to initialise a lot of different types, possibly supplying them with various arguments the class holds as members.
-
-It is very prone to ambiguous function call issues, especially with MSVC that generally lacks in compliance to standards. You will need SFINAE to prevent the unwanted conversions from matching.
-
----
 ## Conversion constructor
 While conversion operator converts a given class to various, often impossible to extend classes, the conversion constructor converts any classes to a given class.
 
 The syntax is relatively common:
 ```C++
-SuperPointer(const std::shared_ptr<T>& set) {
+SuperString(const std::string& set) {
 ```
 This one can be used to convert shared pointers implicitly to the `SuperPointer` class:
 ```C++
-void processString(std::shared_ptr<std::string> stringValue) {
-    SuperPointer<std::string> string = stringValue;
+void processString(std::string stringValue) {
+    SuperString str = stringValue;
 ```
 This will convert shared pointer to `SuperPointer`, so that the assignment operator would work on it.
 
 ---
 Implicit conversions may apply recursively, which can lead to unwanted conversions to completely different classes. Use the `explicit` keyword with the constructor to prevent it.
 
-To allow wide ranges of conversions, a templated version of conversion operator can be used. In that case, SFINAE can be used to prevent too many possible conversions, possibly leading to ambiguities.
-
 ---
 ## Homework
-Create three classes that behave like integer, float and string. They all inherit from a common ancestor and override its methods for serialisation and deserialisation (JSON, XML, whatever you like). Create a class that can be used to initialise them all, setting an object where their properties should be saved when a class that contains them is serialised.
+Create three classes that behave like integer, float and string. They all inherit from a common ancestor and override its methods for serialisation and deserialisation (JSON, XML, whatever you like). Create a class that can be used to initialise them all. They will use the same object to save their values when they're destroyed.
 
 ```C++
 Electrocard::Electrocard(const nlohmann::json& configuration) :
     configurator(this, configuration, "electrocard"),
-    frequency(configurator),
-    maxVoltage(configurator),
-    waveform(configurator),
-    runMode(configurator),
+    frequency(configurator, "freq"),
+    maxVoltage(configurator, "voltage"),
+    waveform(configurator, "wave"),
+    runMode(configurator, "mode"),
 ```

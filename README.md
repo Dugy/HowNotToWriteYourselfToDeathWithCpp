@@ -29,12 +29,12 @@ Being able to read C++ code and having written a few Python scripts with intense
 
 ## Outline
 1. [Introduction](https://github.com/Dugy/HowNotToWriteYourselfToDeathWithCpp/blob/master/slides/01_Introduction.md)
-2. [Generic functions and SFINAE](https://github.com/Dugy/HowNotToWriteYourselfToDeathWithCpp/blob/master/slides/02_Generic_functions_and_SFINAE.md)
-3. [Nontrivial operator usage](https://github.com/Dugy/HowNotToWriteYourselfToDeathWithCpp/blob/master/slides/03_Nontrivial_operator_use.md) (WiP)
-4. Object model in C++ (TBA)
+2. [Object model in C++](https://github.com/Dugy/HowNotToWriteYourselfToDeathWithCpp/blob/master/slides/02_Object_model_cpp.md)
+3. [Nontrivial operator usage](https://github.com/Dugy/HowNotToWriteYourselfToDeathWithCpp/blob/master/slides/03_Nontrivial_operator_use.md)
+4. [Generic functions and SFINAE](https://github.com/Dugy/HowNotToWriteYourselfToDeathWithCpp/blob/master/slides/04_Generic_functions_and_SFINAE.md)
 5. Clean interface (TBA)
 6. Generic classes (TBA)
-7. Memory manipulation (TBA)
+7. [Memory manipulation](https://github.com/Dugy/HowNotToWriteYourselfToDeathWithCpp/blob/master/slides/07_Memory_manipulation.md)
 8. Runtime metaprogramming (TBA)
 9. Template metaprogramming (TBA)
 10. Putting it all together (TBA)
