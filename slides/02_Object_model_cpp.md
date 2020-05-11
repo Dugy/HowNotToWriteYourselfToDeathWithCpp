@@ -67,7 +67,6 @@ This functionality is chiefly called _RAII,_ which stands for _Resource Acquisit
 It means that when an object is created, one of its constructors is called and when it goes out of scope, its destructor is called.
 
 ---
-
 A constructor is called when a stack-allocated object is created, when a member object is created, when dynamic memory pointing to the object is allocated or when a temporary object is created.
 
 A destructor is called:
@@ -83,10 +82,10 @@ A destructor is called:
 ```
 
 ---
-Since C++11, a constructor can call (delegate) other constructors of the same class. This is useful when there are many constructors that aren't simple enough. Typically, this leads to implementing additional constructor functionality to one constructor and having other constructors delegate it.
+Both constructor and destructor can be avoided by creating a different object like `std::array<uint8_t, sizeof(A)>` (with appropriate size) and using `reinterpret_cast` to get a reference to the actual object. This is rarely useful. Possible uses are writing a vector-like structure (for example for vectorising tree-like structures), creating custom allocators and such.
 
 ---
-Both constructor and destructor can be avoided by creating a different object like `std::array<uint8_t, sizeof(A)>` (with appropriate size) and using `reinterpret_cast` to get a reference to the actual object. This is rarely useful. Possible uses are writing a vector-like structure (for example for vectorising tree-like structures), creating custom allocators and such.
+Since C++11, a constructor can call (delegate) other constructors of the same class. This is useful when there are many constructors that aren't simple enough. Typically, this leads to implementing additional constructor functionality to one constructor and having other constructors delegate it.
 
 ```C++
 struct A {
@@ -151,7 +150,7 @@ Parent classes and member classes are copy constructed from respective parts of 
 ```C++
 PisPNproof(PisNPproof&& other) {
 ```
-A move constructor is called when the object is created from another instance that is not const and cannot be used afterwards (temporary or return value).  It can be forced by calling `std::move` on it.
+A move constructor is called when the object is created from another instance that is not const and cannot be used afterwards (temporary or return value). It can be forced by calling `std::move` on it.
 ```C++
 void stench(const std::string& stink) {
     std::string stunk = stink + "-washed";
@@ -160,7 +159,16 @@ void stench(const std::string& stink) {
 ```
 Move constructor is mainly an optimisation or error prevention mechanism to avoid duplicating resources. The destructor will still be called, so the object must be left in a state the destructor can deal with.
 
-Parent classes and member classes are move constructed from respective parts of the argument unless their constructor arguments are explicitly stated. If they can all be move constructed, the move constructor does not have to be defined explicitly.
+Parent classes and member classes are move constructed from respective parts of the argument unless their constructor arguments are explicitly stated. If they can all be move constructed, the move constructor usually does not have to be defined explicitly.
+
+---
+#### Other constructors
+
+* Conversion - takes a const reference to a different class as the only argument, allows implicit conversion from another type (`A(const B& other);`)
+* Move conversion - a move constructor that takes a different type (`A(B&& other);`)
+* Custom - anything else
+
+Conversion constructors can be turned into normal constructors (that won't be called implicitly) can be done using the `explicit` keyword. Use it if you don't mean to define implicit conversions, it will save you from a lot of need to use explicit language later.
 
 ---
 ### Access control
