@@ -262,8 +262,44 @@ public:
 ```
 
 ---
-## Design
-At this point, you should know a load of tricks how to write less code. Now it's time to sit down and reflect about their usage.
+## Design philosophy
+At this point, you should know a load of tricks how to write less code when using a lower layer of your program. Now it's time to sit down and reflect about their usage.
+
+Every approach has some tradeoffs between amount of code needed for using it, amount and complexity of code to get it working, performance and error proneness.
+
+---
+When deciding whether to design an interface that needs little code:
+* Is the code used often enough? If not, keeping up with SOLID principles may be enough
+* Can performance matter in that part of code? If yes, don't use tricks that rely on virtual functions (`std::function` uses virtual functions)
+
+---
+When looking for a way to allow using something with minimal code, it's better not to think about SOLID principles, but from the point of view of the user of the interface:
+* Every piece of information has to be written at least once
+* Some parts of the code have to be written in any case, like types of members
+* Anything else usually doesn't need to be written over and over
+
+The following shows that a getter/setter pair that convert a value and call a protocol need only one line to be wholly functional:
+```C++
+class Motor : RemoteDevice {
+	const std::function<void(int, int, int)> callibrate = remoteMethod("cal");
+	remoteValue<float> positionX = "xpos";
+	remoteValue<float> positionY = "ypos" & ratio(0.15);
+//...
+callibrate(20, 10000, 300);
+positionX = 10;
+positionY = 12;
+```
+
+---
+* Template parameter deduction can be used to avoid writing types more than once
+* Parent classes help avoid writing similar implementations to interfaces and paths to member functions
+* Function argument values can be stored
+* Method calls can often be shortened to operators
+
+---
+When deciding if an implementation that can be used with less code should be used over one that uses more code:
+* Is the idea too different from typical C++ code? If yes, is it used often enough to justify that every new programmer will have to read the documentation?
+* How easy is it to make mistakes by being careless? Can these mistakes be detected before they cause undefined behaviour?
 
 ---
 ## Homework

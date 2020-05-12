@@ -386,6 +386,50 @@ The generic conversion operator allows using a single short symbol without templ
 It is very prone to ambiguous function call issues, especially with MSVC that generally lacks in compliance to standards. You will need SFINAE to prevent the unwanted conversions from matching.
 
 ---
+## Matching functions
+The most common case will be dealing with instances of `std::function`:
+```C++
+template <typename Returned, typename... Args>
+void grabFunction(std::function<Returned(Args...)> func) {
+```
+
+---
+Free functions can be captured through the strange syntax of function pointers:
+```C++
+template <typename Returned, typename... Args>
+void grabFunction(Returned(*func)(Args...)) {
+```
+
+Member functions can be captured similarly:
+```C++
+template <typename Object, typename Returned, typename... Args>
+void grabFunction(Returned(Object::*func)(Args...)) {
+```
+
+---
+Example of usage:
+```C++
+template <typename Object, typename Returned, typename... Args>
+std::function<Returned(Args...)> exportMethod(Object* instance, Returned(Object::*func)(Args...)) {
+	return [instance, func] (Args... args) {
+		return (instance->*func)(args...);
+	};
+}
+//...
+std::string a = "Blablabla";
+auto clearMyString = exportMethod(&a, &std::string::clear);
+```
+
+---
+Lambdas are not functions, they are classes. They however always have an overloaded `operator()`, which is a method
+```C++
+template <typename T>
+void grabFunction(T func) {
+	return grabFunction(&func, &T::operator());
+}
+```
+
+---
 ## Homework
 Use `if constexpr` to create a function that sorts its arguments (given by reference). Use bubblesort for simplicity.
 ```C++

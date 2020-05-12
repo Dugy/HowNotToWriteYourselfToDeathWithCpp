@@ -241,22 +241,38 @@ float upToThree = unpredictable * 3;
 ```
 
 ---
-## Conversion constructor
-While conversion operator converts a given class to various, often impossible to extend classes, the conversion constructor converts any classes to a given class.
-
-The syntax is relatively common:
-```C++
-SuperString(const std::string& set) {
-```
-This one can be used to convert shared pointers implicitly to the `SuperPointer` class:
-```C++
-void processString(std::string stringValue) {
-    SuperString str = stringValue;
-```
-This will convert shared pointer to `SuperPointer`, so that the assignment operator would work on it.
+## Operators new and delete
+If you want some classes to be allocated differently than the standard allocator does, you can overload the `new` and `delete` operators. This may be needed for a variety of niche reasons:
+* Allowing a parent class to learn the size of the derived class that is created
+* Indexing the objects
+* Zeroing memory after delete, or filling it with invalid data
+* Debugging some tough problems
+* Allocating some objects in shared memory
+* A garbage collector of some sort
+* Some advanced optimisations
 
 ---
-Implicit conversions may apply recursively, which can lead to unwanted conversions to completely different classes. Use the `explicit` keyword with the constructor to prevent it.
+Any object of the desired type or even all objects will be allocated and deallocated differently than by simply calling `malloc()`. It also applies to objects allocated using `make_unique` or `make_shared`, because they internally use `new`. Containers like `std::vector` allocate blocks of memory and use placement constructors inside, so overloading the `new` operator for the class will _not_ change their allocation.
+
+Also, it is not called any time the class is created on stack.
+
+---
+The overload is written as follows:
+```C++
+void* operator new(size_t size) // implicitly static
+{
+	void* address = malloc(size); // this uses the normal new  
+	std::cout << "Allocating a Leafblower at: " << size << std::endl;
+	return address;
+}
+void operator delete(void* pointer) // implicitly static
+{
+	std::cout << "Deallocating a Leafblower at: " << size << std::endl;
+	free(pointer);
+}
+```
+
+If it's not within a class, it applies globally.
 
 ---
 ## Homework
