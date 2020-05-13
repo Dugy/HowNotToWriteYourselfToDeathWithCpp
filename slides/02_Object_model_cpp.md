@@ -260,6 +260,9 @@ During construction, the RTTI pointer points to the table of virtual functions o
 Calling functions that are purely virtual in that class will fail.
 
 ---
+Calling virtual functions is slower than calling normal ones and they can be implemented wrongly in the descendant, breaking the program. Only those functions that are meant to be overriden at least in some children should be declared virtual.
+
+---
 ## Multiple inheritance
 Classes can inherit from multiple parents. It is usually all right, they will internally be composed of them all and inherit their methods.
 

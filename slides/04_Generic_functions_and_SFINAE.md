@@ -53,6 +53,8 @@ Internally:
 * An instantiated function template is a regular function
 * An instantiated template is very likely to be inlined (avoiding the cost of a function call and allowing better optimisation) because it's always available to the compilation unit (like other functions defined in headers)
 
+Because of these constraints, a generic function can't be virtual.
+
 ---
 **Exercice:** Write a generic function that removes an element at given index from a vector by moving the last element into its place and removing the last element (fast removal but without keeping the order).
 
