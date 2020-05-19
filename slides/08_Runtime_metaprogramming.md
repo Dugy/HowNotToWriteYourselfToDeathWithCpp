@@ -94,7 +94,7 @@ struct function {
 	struct Payload {
 		virtual rettype call(arguments... args) = 0;
 	}
-	Payload* payload; // this is copied in copy constructor and properly destroyed
+	Payload* payload; // this is deepcopied in copy constructor and properly destroyed
 
 	rettype operator() (arguments&&... args) {
 		content.call(args...);
@@ -113,3 +113,94 @@ struct function {
 	}
 //...
 ```
+
+---
+## Closure
+A lambda's capture area determines which variables are held inside it and how:
+* A copy - useful for callbacks
+* A reference - useful when the lambda doesn't outlive its context
+
+Examples of syntax:
+* `[&]` captures everything mentioned inside by reference
+* `[=]` captures everything mentioned inside as a copy
+* `[this]` captures pointer to `this`, giving access to members
+* `[*this]` captures a copy of `this`, can safely outlive `this` (C++17)
+* `[&, i]` captures `i` as copy and everything else as reference
+* `[=, &data]` captures everything as copy, but `data` as reference
+
+---
+It is possible to capture other lambdas. Under normal circumstances, a lambda cannot capture itself, because a class cannot contain itself.
+
+It is however quite useful for GUI callbacks that reconstruct parts of the GUI and set themselves back as callbacks. This limitation can be worked around:
+```C++
+std::shared_ptr<std::unique_ptr<std::function<int()>>> capture
+		= std::make_shared<std::unique_ptr<std::function<int()>>>();
+*capture = std::make_unique<std::function<int()>>([capture, blabla] () {
+	// some stuff
+	(**capture)(); // Can call itself
+	return stuff;
+});
+```
+
+---
+### Exercise
+Create a function that takes a lambda as argument and returns a shared pointer to an object that will call the lambda when destroyed.
+
+---
+### Generalised lambda capture
+Since C++14, there is a shorter and more efficient way to insert member variables to lambdas:
+```C++
+auto getCounter() {
+	return [count = std::make_shared<int>()] () {
+		(*count)++;
+		return *count;
+	};
+}
+```
+
+The part on the right can be any expression. The variable is created as if it was declared `auto`.
+
+---
+#### Exercise
+Create a logger lambda that can be copied, but all copies share the same log file.
+
+---
+### Mutable lambda
+A typical lambda's overload of `operator()` is a const method. This still allows editing variables captured through pointers and references, so in most cases, it's enough.
+
+In order to turn a lambda into an object capable of changing its internal state, it must be declared `mutable`. This the overload of `operator()` to be nonconst.
+```C++
+auto getCounter() {
+	return [count = 0] () mutable {
+		count++;
+		return count;
+	};
+}
+```
+
+`std::function` handles this fine, but when using template matching to get the argument types, it has to be accounted for. Of course, if a mutable lambda becomes const, it cannot be invoked.
+
+---
+### Lambda inheritance
+Lambda is a class, so it can be inherited from. This can be useful to create a lambda-like object that has more overloads of `operator()`, resolved by different argument counts or types.
+```C++
+char ending = '\n';
+auto printInt = [ending] (int num) {
+	std::cout << "int:" << num << ending;
+}; // its type is decltype(printInt)
+auto printFloat = [ending] (float num) {
+	std::cout << "float: << num << ending;
+};
+struct Both : decltype(printInt), decltype(printFloat) { };
+Both both{ printInt, printFloat };
+both(3);
+both(4.3f);
+```
+
+Both lambdas contain their copies of `ending`. The `Both` class can't be properly wrapped into `std::function`, so if this is to be used outside of the context where the lambdas are defined, it might need a custom reimplementation of `std::function`.
+
+---
+## Homework
+Use a GUI framework (for example Qt) to create a function that takes a shared pointer to a data structure and returns a widget containing more widgets with callbacks that allow the user to modify the data structure.
+
+You can choose what data structure it modifies, but it must be possible to add and remove elements at any location.

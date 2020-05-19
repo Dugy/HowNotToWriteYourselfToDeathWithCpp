@@ -363,7 +363,7 @@ serialise("id", saved.id);
 serialise("rating", saved.rating);
 ```
 
-Note: Parametres can be declared as `auto` even in inline functions.
+Note: Parametres and return values can be declared as `auto` also in inline functions. It isn't possible to get a pointer to any function with an `auto` as parameter nor to wrap it into `std::function`.
 
 ---
 ### Exercise
