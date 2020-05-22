@@ -433,9 +433,4 @@ void grabFunction(T func) {
 
 ---
 ## Homework
-Use `if constexpr` to create a function that sorts its arguments (given by reference). Use bubblesort for simplicity.
-```C++
-// Variables lowest, lower, upper, highest are in undefined order
-staticSort(lowest, lower, upper, highest);
-// Now lowest < lower < upper < highest
-```
+Create a `Bindable` class that has a `bind` method that can be applied to a member function and will return a lambda that accepts the same arguments as the member function.
