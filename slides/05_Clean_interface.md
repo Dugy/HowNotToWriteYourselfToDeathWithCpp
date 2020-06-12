@@ -262,6 +262,31 @@ public:
 ```
 
 ---
+## Enum inheritance
+It happens that there is an `enum` type that needs to be extended by other classes. It can be faked by combining classes and plain enums:
+```C++
+struct LayoutType {
+	enum Type {
+		Grid,
+		HBox,
+		VBox,
+		Max
+	};
+};
+
+struct WidgetType : public LayoutType {
+	enum Type {
+		LineEdit = LayoutType::Max,
+		CheckBox,
+		Button,
+		Max,
+	};
+};
+```
+
+A disadvantage is that if it's accepted as an argument to a function, it has to be implicitly cast to `int`.
+
+---
 ## Design philosophy
 At this point, you should know a load of tricks how to write less code when using a lower layer of your program. Now it's time to sit down and reflect about their usage.
 

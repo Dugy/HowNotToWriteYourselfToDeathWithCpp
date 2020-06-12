@@ -105,7 +105,7 @@ public:
 	}
 }`
 ```
-This no longer requires implementing two extra classes assist create the abstraction, but there's still a lot of repetitive code. It would be handy to be able to swap methods dynamically.
+This no longer requires implementing two extra classes to create the abstraction, but there's still a lot of repetitive code. It would be handy to be able to swap methods dynamically.
 
 ---
 ### Unified implementation #2
@@ -114,30 +114,70 @@ class LaserCutter : public Device {
 	void _setPosition(float x, float y) override;
 	void _setPower(float power_mw) override;
 public:
-	std::function<void(float, float)> setPosition
-				= rpcMethod("setPosition", &LaserCutter::_setPosition);
-	std::function<void(float)> setPower
-				= rpcMethod("setPower", &LaserCutter::_setPower);
-}
+	RemoteMethod<&LaserCutter::_setPosition> setPosition = rpcMethod("setPosition");
+	RemoteMethod<&LaserCutter::_setPower> setPower = rpcMethod("setPower");
+//...
 ```
-The function signature has to be repeated, but I haven't found a way to derive it without significant drawbacks.
+Using function pointers as template arguments is a C++17 only feature:
+```C++
+template <auto Method>
+class RemoteMethod //...
+```
 
 ---
 ### Exercise
 Implement the last iteration of the `Device` class. You don't have to write the methods that actually serialise and deserialise the arguments, only what is necessary to get the `rpcMethod` method working.
 
+---
+## GUI
+Can we use the pliability of C++ syntax to define a GUI with less code than the web frameworks?
 
+Yes, we can.
 
+---
+```C++
+struct NameWindow : Formulaire {
+	Title t = title("Set address");
+	struct : HBox {
+		Input<std::string> first = placeholderText("First name");
+		Input<std::string> last = placeholderText("Last name");
+	} name = {{ noBorder().title("Name") }};
+	Input<std::string> address = title("Address");
+	struct : HBox {
+		Input<std::string> city = placeholderText("City").defaultValue("Brno");
+		Input<int> code = placeholderText("Postal code");
+	} city = {{ noBorder().title("City") }};
+	Button submit = title("Submit");
+};
+//...
+wnd.submit = [=] () {
+	addEntry(*wnd.name.first + " " + *wnd.name.last,
+		*wnd.address + ", " + std::to_string(*wnd.city.code)
+		+ " " + wnd.city.city);
+	wnd.close();
+};
+```
 
+---
+The source code is at: [https://github.com/Dugy/DuGUI](https://github.com/Dugy/DuGUI)
 
+So now, how it works?
 
-
-
-
+---
+* The property setting member functions create objects containing settings that also have pointers to the parent object
+* The individual widgets (`Input`, `Button`, ...) receive the settings and the pointer to their parent object and add themselves to the list of its children
+* The containers are initialised in the same way, but if they are instanced at the same place as they are defined, they can be only initialised using aggregate initialisers
+* The aggregate initialisers expect the parent class' constructor arguments before member initialisers, so the initialising object is passed to the parent
+* Together, it creates a tree structure at runtime
 
 ---
 ## Homework
+Clone the [repository](https://github.com/Dugy/DuGUI) and make a merge request with a small improvement of your choice
+
+---
+## Alternate homework
+Implement a part of the JSON-RPC example
 
 ---
 ## Conclusion
-If you have gone this far without skipping exercises and homework, go buy a cloak and a wizard hat and you are done.
+If you have gone this far without skipping exercises and homework, go buy a cloak and a pointed hat and you are done.
