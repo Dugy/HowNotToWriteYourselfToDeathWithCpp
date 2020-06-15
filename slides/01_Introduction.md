@@ -486,7 +486,7 @@ Use them as often as possible without making it annoying to run the program in a
 
 ---
 And when using exceptions, don't abuse the possibility to throw any type:
-* All eceptions should inherit from `std::exceptions`
+* All exceptions should inherit from `std::exception`
 * If the error happens due to external circumstances, throw `std::runtime_error` or better, an exceptions that inherits from it
 * If the error happens due to programming errors, throw `std::logic_error`
 

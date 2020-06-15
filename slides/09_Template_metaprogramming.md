@@ -88,6 +88,7 @@ template <typename T>
 void addComponent(const T& added) {
 	static_assert(std::is_same_v<decltype(added.id())>), std::string>,
 		"Object must have an id() method that returns a std::string");
+```
 
 ---
 ## Compile time loop

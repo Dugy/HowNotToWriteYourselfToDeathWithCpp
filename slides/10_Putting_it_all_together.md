@@ -118,7 +118,7 @@ public:
 	RemoteMethod<&LaserCutter::_setPower> setPower = rpcMethod("setPower");
 //...
 ```
-Using function pointers as template arguments is a C++17 only feature:
+Using function pointers as template arguments without knowing the exact type in advance is a C++17 only feature:
 ```C++
 template <auto Method>
 class RemoteMethod //...
@@ -176,7 +176,10 @@ Clone the [repository](https://github.com/Dugy/DuGUI) and make a merge request w
 
 ---
 ## Alternate homework
-Implement a part of the JSON-RPC example
+Design and implement a small library for parsing command line arguments that is as easy to use and needs as little code as possible.
+```
+./railgun enemies.csv -tbf --auto-aim --multitarget 3 -p priority_rules.conf
+```
 
 ---
 ## Conclusion

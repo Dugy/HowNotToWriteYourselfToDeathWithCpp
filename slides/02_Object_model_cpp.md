@@ -28,7 +28,7 @@ Obeying them completely or ignoring them leads to the LIQUID principles (Low in 
 
 ---
 ### Single Responsibility / Interface Segregation Principle
-Once your program has a lot of classes, they will often share a lot of functionality. Any shared functionality implies they should have a common parent that provides that functionality. Code that is duplicated across multiple files is extremely difficuly and bug prone to change. But you probably know this. But it can get more complex.
+Once your program has a lot of classes, they will often share a lot of functionality. Any shared functionality implies they should have a common parent that provides that functionality. Code that is duplicated across multiple files is extremely difficult and bug prone to change. But you probably know this. But it can get more complex.
 
 ---
 Some of following advice can be happily ignored if the code is performance critical.
@@ -228,7 +228,7 @@ The `typeid()` keyword will obtain an instance of `std::type_info` that can be u
 ---
 The most usual case of using RTTI is to allow a class to be properly destroyed while being used as its parent class.
 
-If a function _doesn't_ have a virtual destructor and its descendant is converted to it and destroyed as its parent, the destructors of its members will not be called, causing incorrect behaviour (mostly memory leaks). STL classes except streams and exceptions _don't_ have virtual destructors, so don't inherit from them unless you know what you are doing.
+If a function _doesn't_ have a virtual destructor and its descendant is converted to it and destroyed as the parent class, the destructors of the descendant's members will not be called, possibly causing incorrect behaviour (mostly memory leaks). STL classes except streams and exceptions _don't_ have virtual destructors, so don't inherit from them unless you know what you are doing.
 ```C++
 virtual ~PQRG() = default;
 ```

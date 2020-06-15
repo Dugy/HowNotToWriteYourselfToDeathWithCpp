@@ -168,7 +168,7 @@ An auxiliary object's destructor is called when the object runs out of scope, so
 	cmd->*"strategy" = "B27";
 } // sent
 ```
-Be careful about errors. They need to be handled with exceptions and destructors that throw need to be marked as such or the program will terminate.
+Be careful about errors. They need to be handled with exceptions and destructors that throw need to be marked as such or the program will terminate. Also, throwing destructors shouldn't be used for anything else than fatal erros because an exception thrown during exception handling will cause the program to abort if it reaches the context where the first exception is handled.
 
 ---
 ## Stateful initialisation
@@ -216,16 +216,16 @@ public:
 ---
 ### The dangers
 * Modifying the program to have more instances of the class requires extensive changes
-* A singleton may use other classes, some of which may be later altered to use the singleton, tangling all dependencies and causing huge mess
+* A singleton may use other classes, some of which may be later altered to use the singleton, tangling all dependencies and causing a huge mess
 * The order of destruction of singletons is not defined and they are initialised in the order they are accessed
 * A singleton is difficult to test automatically, because the tests cannot destroy it and create it anew
-* If a singleton has a state, it can be left it an unsuitable one at a location that is difficult to find
+* If a singleton has a state, it can be left in an unsuitable one at a location that is difficult to find
 * Reaching a singleton in a debugger is difficult
 
 ---
 ### How not to shoot yourself in the foot
 * Use a singleton only if you are sure there will never be any need for more instances (user input, GUI set, video card access, server connection)
-* Make sure that the singleton encapsulates some functionality entirely will never be needed by anything it uses
+* Make sure that the singleton encapsulates some functionality entirely and will never be needed by anything it uses
 * If the singleton' depends on other singletons, have `main()` or some other privileged function create it and destroy it explicitly
 * If automatic testing is applicable, implement some way to reset it
 * If the singleton is to have a state, it should be `thread_local` or mutex-protected and RAII should guarantee it will not be left in a bad one
@@ -267,24 +267,62 @@ It happens that there is an `enum` type that needs to be extended by other class
 ```C++
 struct LayoutType {
 	enum Type {
-		Grid,
 		HBox,
 		VBox,
 		Max
 	};
 };
-
 struct WidgetType : public LayoutType {
 	enum Type {
 		LineEdit = LayoutType::Max,
 		CheckBox,
-		Button,
 		Max,
 	};
 };
 ```
 
 A disadvantage is that if it's accepted as an argument to a function, it has to be implicitly cast to `int`.
+
+---
+## Aggregate initialisation
+This feature is mainly a C remnant intended to keep C code compatible with C++, but it can be useful to avoid having to write constructors.
+
+Requirements for the class to be aggregate initialisable (as of C++17):
+* Can't be polymorphic (virtual methods are forbidden)
+* Can't have private or protected member variables or parent classes (parent classes themselves can have them)
+* Can't have custom defined constructors
+
+---
+```C++
+struct Parent {
+  int a;
+  Parent(int a) : a(a) {}
+};
+
+struct Child : Parent {
+  int b = 3;
+  int c;
+  int d;
+};
+//...
+Child child = {{3}, 2, 4};
+```
+
+Parent classes are initialised through included brace-enclosed lists (can call constructors or be aggregate-initialised as well). Default values are overriden. Supernumerary members are not initialised.
+
+---
+For clarification, member names can be written explicitly:
+```C++
+struct Octopus : Animal {
+	int tentacles;
+	bool changesColour;
+};
+//...
+Octopus octopus = {{basicProperties}, .tentacles = 10, .changesColour = true};
+```
+
+---
+Aggregate initialisation can be used with dynamic allocation, but not with smart pointers. This restricts its usefulness.
 
 ---
 ## Design philosophy

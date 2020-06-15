@@ -269,7 +269,7 @@ Types can be transformed if necessary:
 They can be shortened like `std::decay<T>::type` to `std::decay_t<T>`.
 
 ---
-To obtain the result of an expression, use the `decltype` keyword:
+To obtain the type of the result of an expression, use the `decltype` keyword:
 ```C++
 if constexpr (std::is_base_of_v<Robot, decltype(*data.begin())>) {
 ```
