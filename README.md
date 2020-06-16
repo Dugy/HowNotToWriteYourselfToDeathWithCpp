@@ -37,4 +37,4 @@ Being able to read C++ code and having written a few Python scripts with intense
 7. [Memory manipulation](https://github.com/Dugy/HowNotToWriteYourselfToDeathWithCpp/blob/master/slides/07_Memory_manipulation.md)
 8. [Runtime metaprogramming](https://github.com/Dugy/HowNotToWriteYourselfToDeathWithCpp/blob/master/slides/08_Runtime_metaprogramming.md)
 9. [Template metaprogramming](https://github.com/Dugy/HowNotToWriteYourselfToDeathWithCpp/blob/master/slides/09_Template_metaprogramming.md)
-10. Putting it all together (TBA)
+10. [Putting it all together](https://github.com/Dugy/HowNotToWriteYourselfToDeathWithCpp/blob/master/slides/10_Putting_it_all_together.md)
