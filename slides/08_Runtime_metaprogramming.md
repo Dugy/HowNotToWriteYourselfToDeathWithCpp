@@ -189,7 +189,7 @@ auto printInt = [ending] (int num) {
 	std::cout << "int:" << num << ending;
 }; // its type is decltype(printInt)
 auto printFloat = [ending] (float num) {
-	std::cout << "float: << num << ending;
+	std::cout << "float:" << num << ending;
 };
 struct Both : decltype(printInt), decltype(printFloat) { };
 Both both{ printInt, printFloat };
