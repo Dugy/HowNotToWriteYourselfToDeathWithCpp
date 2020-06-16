@@ -154,9 +154,9 @@ Note: sometimes, faster to write code can be faster, but there will also be perf
 ---
 ## Outline
 1. Introduction
-2. Generic functions and SFINAE
+2. Object model in C++
 3. Nontrivial operator usage
-4. Object model in C++
+4. Generic functions and SFINAE
 5. Clean interface
 6. Generic classes
 7. Memory manipulation
