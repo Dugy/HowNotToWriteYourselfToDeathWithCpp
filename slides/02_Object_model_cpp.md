@@ -1,7 +1,7 @@
 # 2. Object model in C++
 Most of nowadays' popular programming languages have some sort of classes and inheritance. As with nearly everything else, C++ goes further.
 
-C++ does not distinguish between interfaces and regular classes and allows multiple inheritance even from parents with the same ancestor. Features to deal with all the pitfalls are provided, but they are not always so straightforward.
+C++ does not distinguish between interfaces and regular classes and allows multiple inheritance even from parents with the same ancestor. Features to deal with all the pitfalls are provided, but they are not always so straightforward. Mastering these will enhance your OOP to a level that Java developers never even dreamed of.
 
 ---
 ## Class types
@@ -24,7 +24,7 @@ SOLID principles are rules of thumb that help avoid later code duplication and t
 * Interface Segregation Principle - not very different from Single Responsibility Principle
 * Dependency Inversion Principle - needs forward declarations to violate, so be careful with them
 
-Obeying them completely or ignoring them leads to the LIQUID principles (Low in Quality, Unmatched in Despair).
+Obeying them dogmatically or ignoring them leads to the LIQUID principles (Low in Quality, Unmatched in Desolation).
 
 ---
 ### Single Responsibility / Interface Segregation Principle
@@ -113,16 +113,21 @@ This should not be called on properly allocated objects, because the destructor 
 
 ---
 ### Constructor types
-Custom constructors tend to be the most known because they are the most commonly written. First are parent classes initialised (from left to right), then members (from top to bottom) and finally the body of the constructor is executed.
+What is the order of initialisation of the individual parent classes, of the member variable and the printing?
 ```C++
 struct QuantumComputer : Quantum, Computer {
     std::string _name;
+    std::string _manufacturer;
     QuantumProcessor(std::string name, int id)
-        : Quantum(id), Computer(id), _name(name) {
+        : Quantum(id), Computer(id), _name(name), _manufacturer("Loolge") {
         std::cout << "Made one, won the Nobel prize!" << std::endl;
     }
 };
 ```
+
+---
+Custom constructors tend to be the most known because they are the most commonly written. First are parent classes initialised (from left to right), then members (from top to bottom) and finally the body of the constructor is executed.
+
 But there are special constructor types that may act somewhat differently.
 
 ---
@@ -133,7 +138,7 @@ If the constructor takes no arguments, it's the default constructor. A default c
     std::string stunk; // Default constructor called
 }
 ```
-Parent classes and member classes are default initialised unless their constructor arguments are explicitly stated (if they cannot, the constructor will fail to compile). If they can all be default constructed and there is no custom constructor, the default constructor does not have to be defined explicitly.
+Parent classes and member classes are default initialised unless their constructor arguments are explicitly stated (if they cannot, they need the arguments stated explicitly). If they can all be default constructed and there is no custom constructor, the default constructor does not have to be defined explicitly.
 
 ---
 #### Copy constructor
@@ -143,7 +148,7 @@ void stench(const std::string& stink) {
     std::string stunk = stink; // Copy constructor called
 }
 ```
-Parent classes and member classes are copy constructed from respective parts of the argument unless their constructor arguments are explicitly stated. If they can all be copy constructed, the copy constructor does not have to be defined explicitly.
+Parent classes and member classes are copy constructed from respective parts of the argument unless their constructor arguments are explicitly stated. If they can all be copy constructed, the copy constructor often does not have to be defined explicitly.
 
 ---
 #### Move constructor
@@ -193,15 +198,15 @@ Write a class that manages parallel access to another class. It uses a `std::sha
 ## Default value
 This can be allowed to change the way members are constructed by the default or custom constructor (not copy or move):
 ```C++
-struct MeineKlasse {
-    std::string foobar = "footavern";
-    int foorestaurant = 37;
+struct SwitchController {
+    Device* parent = nullptr; // Guarantees no constructor can leave it uninitialised
+    bool on = false;
 };
 ```
 To supply more than once constructor argument, another instance must be created and copied to it:
 ```C++
-struct MeineOberklasse : MeineKlasse {
-    std::vector<int> foobarn = std::vector<int>(2, 3);
+struct SchmidtElectricSwitch : SwitchController {
+    std::vector<float> voltages = std::vector<float>(3, 5);
 };
 ```
 This usually needs more code than mentioning it in a constructor, so it might not always be the best thing to do.
@@ -219,14 +224,14 @@ Although it wasn't yet explained how to implement this, it shows how can a membe
 
 ---
 ## Polymorphism and RTTI
-A class with at least one virtual method starts with a pointer to a static structure that identifies it (_RTTI_ or _RunTime Type Information_). Any such object's class can thus be identified.
+A class with at least one virtual method starts with a pointer to a static structure that identifies it (virtual table and _RTTI_ or _RunTime Type Information_). Any such object's class can thus be identified.
 ```C++
 std::cout << typeid(whoami).name() << std::endl;
 ```
 The `typeid()` keyword will obtain an instance of `std::type_info` that can be used to obtain the type's name, a unique number representing it (`hash_code()`) or can be compared. Use this sparingly, it helps violate the Liskov substitution principle.
 
 ---
-The most usual case of using RTTI is to allow a class to be properly destroyed while being used as its parent class.
+The most usual case of using this is to allow a class to be properly destroyed while being used as its parent class.
 
 If a function _doesn't_ have a virtual destructor and its descendant is converted to it and destroyed as the parent class, the destructors of the descendant's members will not be called, possibly causing incorrect behaviour (mostly memory leaks). STL classes except streams and exceptions _don't_ have virtual destructors, so don't inherit from them unless you know what you are doing.
 ```C++
@@ -235,7 +240,7 @@ virtual ~PQRG() = default;
 This will cause the destructor of the actual class to be called, followed by the destructor of its parent, its parent's parent etc. I am just repeating this because it's easy to forget.
 
 ---
-Another crucial use of RTTI is to select the right virtual method (the pointer points to a table containing pointers to the actual methods that will be called by the virtual method calls). You do know this, of course.
+Another crucial use of this functionality is to select the right virtual method (the pointer points to a table containing pointers to the actual methods that will be called by the virtual method calls). You do know this, of course.
 ```C++
 virtual void abdicate() = 0;
 virtual void iAmBack() {
@@ -259,6 +264,19 @@ During construction, the RTTI pointer points to the table of virtual functions o
 
 Calling functions that are purely virtual in that class will fail.
 
+```C++
+struct Device {
+    virtual Version version() const = 0;
+    virtual std::string id() const {
+        return "Demo device";
+    }
+    Device()  {
+        std::cout << "Created device " << id(); // Overrides don't apply
+        std::cout << " version " << version() << std::endl; // Call will fail
+    }
+};
+```
+
 ---
 Calling virtual functions is slower than calling normal ones and they can be implemented wrongly in the descendant, breaking the program. Only those functions that are meant to be overriden at least in some children should be declared virtual.
 
@@ -266,6 +284,9 @@ Calling virtual functions is slower than calling normal ones and they can be imp
 ## Multiple inheritance
 Classes can inherit from multiple parents. It is usually all right, they will internally be composed of them all and inherit their methods.
 
+![Memory layout of multiple inheritance](../pictures/default_multiple_inheritance.png)
+
+---
 If both parents classes inherit from a common parent class, each will contain its own instance of the parent class. More exactly said, if class `B` inherits from class `A`, class `C` also inherits from class `A` and class `D` inherits both from `B` and `C`, class `D` will contain two instances of `A`, one accessible as `B::A` and the other as `C::A`. Accessing methods or members of `A` through `D` requires prefixing it with `B::` or `C::` to specify whose `A` it belongs to or converting it to `B` or `C` before using it as `A`.
 
 If class `B` inherits from class `A` and class `C` inherits both from `A` and `B`, there is no way for `C` to access its direct base `A`.
@@ -276,6 +297,9 @@ Try it out [here](https://repl.it/repls/UnnaturalElasticDimension)
 ## Virtual inheritance
 Virtual inheritance causes a common parent class to be inherited only once.
 
+![Memory layout virtual multiple inheritance](../pictures/virtual_multiple_inheritance.png)
+
+---
 ```C++
 struct Moving : virtual Component {
   std::pair<float, float> _range;
@@ -293,7 +317,10 @@ Mixins are commonly used in languages that don't allow multiple inheritance to a
 
 Suppose that a very commonly used class `A` has a virtual method. Another commonly used class, `B`, inherits from `A`. Many classes share a common implementation of the virtual method of `A`, but it's not common enough to put it in `A` or `B`. To prevent all these classes from implementing it separetely, another common ancestor is needed. In many cases, having a class `C` inherit from `B` is enough, but it's not always suitable (there might be more such methods with various combinations of common implementations, while splitting `A` to more classes would not fit).
 
-In this case, it's suitableto use a mixin. A mixin class `C` would inherit from `A` and implement the virtual method. If a class `D` inherits from `B` and `C`, it receives the virtual method from `A`'s implementation from `C`. All inheritance must be virtual in this case.
+---
+![Mixins are useful for sharing implementations of inherited interfaces](../pictures/mixin.png)
+
+In this case, it's suitable to use a mixin. A mixin class `C` would inherit from `A` and implement the virtual method. If a class `D` inherits from `B` and `C`, it receives the virtual method from `A`'s implementation from `C`. All inheritance must be virtual in this case.
 
 Try it out [here](https://repl.it/repls/DelectableSmartLight)
 
