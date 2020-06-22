@@ -282,16 +282,16 @@ Calling virtual functions is slower than calling normal ones and they can be imp
 
 ---
 ## Multiple inheritance
-Classes can inherit from multiple parents. It is usually all right, they will internally be composed of them all and inherit their methods.
+If a class inherits from two parents classes that inherit from a common parent class, each will contain its own instance of the parent class.
 
 ![Memory layout of multiple inheritance](../pictures/default_multiple_inheritance.png)
 
 ---
-If both parents classes inherit from a common parent class, each will contain its own instance of the parent class. More exactly said, if class `B` inherits from class `A`, class `C` also inherits from class `A` and class `D` inherits both from `B` and `C`, class `D` will contain two instances of `A`, one accessible as `B::A` and the other as `C::A`. Accessing methods or members of `A` through `D` requires prefixing it with `B::` or `C::` to specify whose `A` it belongs to or converting it to `B` or `C` before using it as `A`.
+More exactly said, if class `B` inherits from class `A`, class `C` also inherits from class `A` and class `D` inherits both from `B` and `C`, class `D` will contain two instances of `A`, one accessible as `B::A` and the other as `C::A`. Accessing methods or members of `A` through `D` requires prefixing it with `B::` or `C::` to specify whose `A` it belongs to. Alternatively, it can be converted to `B` or `C` before using it as `A`.
 
 If class `B` inherits from class `A` and class `C` inherits both from `A` and `B`, there is no way for `C` to access its direct base `A`.
 
-Try it out [here](https://repl.it/repls/UnnaturalElasticDimension)
+Try it out [here](https://repl.it/repls/UnnaturalElasticDimension).
 
 ---
 ## Virtual inheritance
@@ -301,28 +301,30 @@ Virtual inheritance causes a common parent class to be inherited only once.
 
 ---
 ```C++
-struct Moving : virtual Component {
+struct Moving : virtual public Component {
   std::pair<float, float> _range;
   float _maxSpeed;
   explicit Moving(Configuration*);
 };
 ```
-Because the common parent object cannot be initialised twice, calling a parent class' constructor will not call its parent class' constructor and the child class will have to do that. In other words if class `B` virtually inherits from `A` and class `D` inherits from class `B` while the constructor of `B` calls the constructor of `A`, calling the constructor of `B` from class `D` will **not** call the constructor of class `A` and the class `D` has to call the constructructors of both `A` and `B`.
 
-Try it out [here](https://repl.it/repls/SafeSufficientWatchdog)
+Try a full example [here](https://repl.it/repls/SafeSufficientWatchdog).
+
+---
+Because the common parent object cannot be initialised twice, calling a parent class' constructor will not call its parent class' constructor and the child class will have to do that. In other words if class `B` virtually inherits from `A` and class `D` inherits from class `B` while the constructor of `B` calls the constructor of `A`, calling the constructor of `B` from class `D` will **not** call the constructor of class `A` and the class `D` has to call the constructructors of both `A` and `B`.
 
 ---
 ### Mixins
-Mixins are commonly used in languages that don't allow multiple inheritance to avoid code duplication. They can, however, be used also in C++.
+Mixins are commonly used to avoid code duplication in languages that don't allow multiple inheritance. In C++, this is rarely needed, but it can be implemented using virtual inheritance if necessary.
 
-Suppose that a very commonly used class `A` has a virtual method. Another commonly used class, `B`, inherits from `A`. Many classes share a common implementation of the virtual method of `A`, but it's not common enough to put it in `A` or `B`. To prevent all these classes from implementing it separetely, another common ancestor is needed. In many cases, having a class `C` inherit from `B` is enough, but it's not always suitable (there might be more such methods with various combinations of common implementations, while splitting `A` to more classes would not fit).
+![Mixins are useful for sharing implementations of inherited interfaces](../pictures/mixin.png)
 
 ---
-![Mixins are useful for sharing implementations of inherited interfaces](../pictures/mixin.png)
+Suppose that a very commonly used class `A` has a virtual method. Another commonly used class, `B`, inherits from `A`. Many classes share a common implementation of the virtual method of `A`, but it's not common enough to put it in `A` or `B`. To prevent all these classes from implementing it separetely, another common ancestor is needed. In many cases, having a class `C` inherit from `B` is enough, but it's not always suitable (there might be more such methods with various combinations of common implementations, while splitting `A` to more classes would not fit).
 
 In this case, it's suitable to use a mixin. A mixin class `C` would inherit from `A` and implement the virtual method. If a class `D` inherits from `B` and `C`, it receives the virtual method from `A`'s implementation from `C`. All inheritance must be virtual in this case.
 
-Try it out [here](https://repl.it/repls/DelectableSmartLight)
+Try it out [here](https://repl.it/repls/DelectableSmartLight).
 
 ---
 ### Homework

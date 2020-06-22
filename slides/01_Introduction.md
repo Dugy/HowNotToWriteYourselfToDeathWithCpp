@@ -149,7 +149,9 @@ Stuff that will **not** be covered:
 * Code style
 
 ---
-Note: sometimes, faster to write code can be faster, but there will also be performance hindering consequences of writing shorter code. In those cases, you will have to consider if they're not _premature pessimisation_ (slower code for minimal or no benefit).
+Note: sometimes, faster to write code can be faster, but there will also be performance hindering consequences of writing shorter code. In those cases, you will have to consider if they're not _premature pessimisation_ (slower code for too little or no benefit).
+
+Note #2: Knowing the general guidelines for writing good code often isn't enough. The rationale behind them must be properly understood. Not doing so leads to _cargo cult programming,_ adhering to rules religiously rather than rationally.
 
 ---
 ## Outline
@@ -562,7 +564,7 @@ std::unique_ptr<PeripheryDriver> makeDriver(const std::string& type,
 ```
 And this is at the end of the file of each of the devices:
 ```C++
-int registerDriver() {
+bool registerDriver() {
   driverGenerators["Voltmeter"] = [] (const BusPosition& position) {
     return std::unique_ptr<Voltmeter>();
   };

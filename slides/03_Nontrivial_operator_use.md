@@ -26,26 +26,30 @@ serialise(icecreams, "icecreams");
 
 ---
 A lambda function is actually a functor, typically with a `const` function call operator. Because of their shorter syntax, they are often more convenient than explicit functors.
+
+Actual code:
 ```C++
 struct {
     Robot* parent;
     void operator() () {
-        std::lock_guard(parent->mutex);
+        std::lock_guard lock(parent->mutex);
         parent->stopAttackingHumans();
     }
 } response;
 response.parent = this;
 safetyButton.setCallback(response);
 ```
+
+Shortened by lambda:
 ```C++
 safetyButton.setCallback([this] {
-    std::lock_guard(mutex);
+    std::lock_guard lock(mutex);
     stopAttackingHumans();
 });
 ```
 
 ---
-Functors are often expected as function arguments to functions that expect something to be called from their bodies. Having to implement an interface for each function call would be annoying.
+Functors are often expected as function arguments to functions that expect something to be called from their bodies. Here, suitable lambdas are faster to write and faster to execute than classes implementing an interface that contains the function.
 ```C++
 data.erase(std::remove_if(data.begin(), data.end(), [] (Value* val) {
     return val->errors() != std::string::npos;
@@ -90,13 +94,15 @@ It can be used to track updates to some value.
 if (plasmaMirror->canMoveX())
     plasmaMirror.edit()->setOrientationX(plasmaMirror->orientationX() - change);
 ```
-In this case, the `plasmaMirror` variable is some class wrapping a class, giving const access to it using the `->` operator and a non-const access using the `edit()` method that does some side-effect, for example marking some config file as dirty and in need of update when the program exits. If you need a dereference-like operation that takes an argument, you can overload the `->*` operator.
+In this case, the `plasmaMirror` variable is some class wrapping a class, giving const access to it using the `->` operator and a non-const access using the `edit()` method that does some side-effect, for example marking some config file as dirty and in need of update when the program exits.
+
+If you need a dereference-like operation that takes an argument, you can overload the `->*` operator.
 
 ---
 The dereference operator is a rather special one because it also eats up the dot operator on the class it outputs. Therefore, it's necessary for it to return a pointer to a class or something that has an overloaded dereference operator itself.
 ```C++
 PlasmaMirror* operator->() {
-    magnetohydrodynamicsSettings->dirty = true;
+    _settings_->dirty = true;
     return _plasmaMirror.get();
 }
 ```
@@ -105,22 +111,32 @@ It's often useful to do this in a generic class rather than a class specific for
 ---
 An auxiliary object's destructor can be used to commit the changes after they are done.
 ```C++
-struct Callback {
-    std::function<Robot*()> access;
-    std::function<void()> reaction;
-    Robot* operator->() {
-        return access();
-    }
-    ~Callback() {
-        reaction();
+struct RobotController {
+    struct Robot {
+        //...
+            void uploadValues() {
+        //...
+        }
+    };
+    std::shared_ptr<Robot> _robot;
+    //...
+    struct Callback {
+        std::function<std::shared_ptr<Robot>()> access;
+        std::function<void()> reaction;
+        std::shared_ptr<Robot> operator->() {
+            return access();
+        }
+        ~Callback() {
+            reaction();
+        }
+    };
+    Callback operator->() {
+        return Callback {
+            [this] { return _robot; },
+            [this] { _robot->uploadValues(); }
+        };
     }
 };
-Callback operator->() {
-    return Callback {
-        [this] { return robot; },
-        [this] { robot->uploadValues(); }
-    };
-}
 ```
 ```C++
 robot->orientation[Orientation::X] = plan.now().x;
@@ -130,16 +146,17 @@ robot->orientation[Orientation::X] = plan.now().x;
 ### Exercice:
 Write a class that holds another class and counts the number of times it is accessed.
 ```C++
+properties.resetTimesAccessed();
 properties->speed = 12;
 properties->velocity = 12;
-std::cout << properties.timesAccessed() << std::endl;
+std::cout << properties.timesAccessed() << std::endl; // Should print 2
 ```
 
 ---
 ## Assignment operator
 As you all probably know, the assignment operator is commonly overloaded for custom copying or moving objects into existing ones.
 ```C++
-void rename(const std::string& newName) {
+void operator=(const std::string& newName) {
     _name = newName;
 }
 ```
@@ -149,19 +166,19 @@ However, it has plenty of other uses.
 Suppose that structures like this are used extensively in the code:
 ```C++
 settings.location.coordinates = coordinates;
-settings.user_location.city = city;
+settings.userLocation.city = city;
 settings.time.zone = timeZone(city);
 ```
-The circumstances are that it would be far more convenient to use this instead:
+However, the paths to nested objects are annoyingly long, so it would be more convenient to write only:
 ```C++
 settings.coordinates = coordinates;
 settings.city = city;
 settings.zone = timeZone(city);
 ```
-But you need to assign some kind of `Location` object into `settings.location` as well. Same for other subsets of settings.
+But the Single Responsibility Principle would be violated and lead to other problems if the settings weren't split into nested objects.
 
 ---
-A possible way to do it is not to make the class a composition and allow assigning those `Location` objects into the class itself:
+A possible way to do it is not to make the class inherit from `Location` and copy the changes from an object into it in assignment:
 ```C++
 Settings& operator=(const Location& location) {
     coordinates = location.coordinates;
