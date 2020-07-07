@@ -102,7 +102,7 @@ If you need a dereference-like operation that takes an argument, you can overloa
 The dereference operator is a rather special one because it also eats up the dot operator on the class it outputs. Therefore, it's necessary for it to return a pointer to a class or something that has an overloaded dereference operator itself.
 ```C++
 PlasmaMirror* operator->() {
-    _settings_->dirty = true;
+    _settings->dirty = true;
     return _plasmaMirror.get();
 }
 ```
@@ -171,14 +171,20 @@ settings.time.zone = timeZone(city);
 ```
 However, the paths to nested objects are annoyingly long, so it would be more convenient to write only:
 ```C++
-settings.coordinates = coordinates;
-settings.city = city;
-settings.zone = timeZone(city);
+settings = coordinates;
+settings = city;
+settings = timeZone(city);
 ```
-But the Single Responsibility Principle would be violated and lead to other problems if the settings weren't split into nested objects.
+But there can't be a huge class containing all those settings because of the difficulties caused by violations of the Single Responsibility Principle.
 
 ---
-A possible way to do it is not to make the class inherit from `Location` and copy the changes from an object into it in assignment:
+A possible way to do it is to make the class inherit from `Location` and other classes that can be used for settings and inherit their assignment operators.
+```C++
+    using Location::operator=;
+```
+
+
+If that's not possible (for example if the class is used multiple times), the assignment operator can have a custom overload:
 ```C++
 Settings& operator=(const Location& location) {
     coordinates = location.coordinates;
@@ -186,10 +192,6 @@ Settings& operator=(const Location& location) {
     altitude = location.altitude;
     return *this;
 }
-```
-This doesn't even have to be written explicitly if the `Settings` class inherits from `Location` and other classes that represent subsets of the settings:
-```C++
-struct Settings : Location, UserLocation, Time, HotDogBrand {
 ```
 
 ---

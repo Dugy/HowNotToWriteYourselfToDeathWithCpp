@@ -32,7 +32,7 @@ Once your program has a lot of classes, they will often share a lot of functiona
 
 ---
 Some of following advice can be happily ignored if the code is performance critical.
-* It happens that the implementation of some interface is a couple of one-liners - consider implementing them in the parent class and set the parameters returned or references to them in the constructor
+* It happens that the implementation of some interface is a load of one-liners - consider implementing them in the parent class using a child class' method or some structure prepared in children's constructor
 * It happens that a part of the functionality is common among many children, but not all - depending on the situation, either give the parent a default implementation or create a class between the children and the parent that implements this sometimes shared functionality
 * It happens that child methods share some functionality - depending on the situation, either make it a method of the parent class that calls a virtual method specialised by children or a make the childen's methods call a parent method under different conditions
 * It happens that some functionality is repeated within one class - use composition, calls may contain more symbols, but it will be possible to iterate over these parts or use lambdas to benefit from the shared functionality also when using the class
@@ -228,8 +228,8 @@ A class with at least one virtual method starts with a pointer to a static struc
 ```C++
 std::cout << typeid(whoami).name() << std::endl;
 ```
-The `typeid()` keyword will obtain an instance of `std::type_info` that can be used to obtain the type's name, a unique number representing it (`hash_code()`) or can be compared. Use this sparingly, it helps violate the Liskov substitution principle.
-
+The `typeid()` keyword will obtain an instance of `std::type_info` that can be used to obtain the type's name, a unique number representing it (`hash_code()`) or can be compared. Use this sparingly, it helps violate the Liskov substitution principle.ArBEAM,type
+ArBEAM,type
 ---
 The most usual case of using this is to allow a class to be properly destroyed while being used as its parent class.
 
@@ -260,7 +260,7 @@ void iAmBack() {
 ```
 
 ---
-During construction, the RTTI pointer points to the table of virtual functions of the class being constructed at that moment, not the class that would be constructed in the end. It's a good thing, because it often prevents accessing uninitialised data.
+During construction, the virtual table pointer points to the table of virtual functions of the class being constructed at that moment, not the class that would be constructed in the end. It's a good thing, because it often prevents accessing uninitialised data.
 
 Calling functions that are purely virtual in that class will fail.
 

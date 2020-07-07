@@ -25,7 +25,7 @@ Stuff that is **not** the goal:
 * Knowledge of C++ sufficient to write common stuff without checking solutions online
 * Understanding of object oriented design
 
-Being able to read C++ code and having written a few Python scripts with intense googling is **not enough.**
+Being able to read C++ code and having used some other object-oriented programming language is **not enough.**
 
 ## Outline
 1. [Introduction](https://github.com/Dugy/HowNotToWriteYourselfToDeathWithCpp/blob/master/slides/01_Introduction.md)

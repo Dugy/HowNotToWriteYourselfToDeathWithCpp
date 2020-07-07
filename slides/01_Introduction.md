@@ -98,7 +98,7 @@ if (format == Format::XML) {
 ```
 While it can be done quickly, it will slow further development down. Later additions to the deserialisation code will have to be duplicated as well.
 
-Have you noticed how annoying would it be to convert all that XML serialisation/deserialisation to JSON?
+Have you noticed that _four_ edits are needed to rename the property?
 
 ---
 This problem is called *technical debt*. If you don't repay it, it will grow indefinitely, until development is nigh impossible.
@@ -111,9 +111,9 @@ Having to write some repetitive code more than once is a sign of impending disas
 When some code is repeated, a tool for doing it without writing too much code is needed. The more it is used, the more complex it can be (in that case, automated tests are needed). Not having to write repetitive code when using it can justify using repetitive code when implementing it.
 ```C++
 class ComponentInformation : public Serialisable {
-  int id = key("id");
-  std::string name = key("id");
-  Version version = key("version");
+  int id = key("id") = -1;
+  std::string name = key("name") = "Unnamed";
+  Version version = key("version") = "1.0.0";
   // ...
 };
 ```
@@ -570,7 +570,7 @@ bool registerDriver() {
   };
   return true;
 }
-bool registered = registerDriver();
+const bool registered = registerDriver();
 ```
 Initialising the file-scoped global variable (happens before main) registers the driver into the global map used by the factory.
 

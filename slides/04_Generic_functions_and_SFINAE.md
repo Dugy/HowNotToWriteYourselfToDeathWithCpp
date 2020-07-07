@@ -1,22 +1,14 @@
 # 4. Generic Functions and SFINAE
 These allow you to write code once and apply it to all types.
 ```C++
-auto secondPower(auto number) {
+template <typemame T>
+T secondPower(const T& number) {
     return number * number;
 }
 ```
 This simple case replaces a macro that would, in case of an error, never show a proper line where the issue happened.
 
 Note: `pow(number, 2)` may execute a universal algorithm for computing power, which is slower than multiplication (premature pessimisation).
-
----
-To add more constraints to the types, templated types can be explicitly stated:
-```C++
-template <typemame T>
-T secondPower(const T& number) {
-    return number * number;
-}
-```
 
 ---
 ```C++
@@ -46,7 +38,7 @@ auto button = std::make_unique<QPushButton>();
 
 ---
 Internally:
-* It's like dynamic typing, but it detects errors at compile time and has no performance cost
+* It's like dynamic typing, but it resolves types and finds errors at compile time and has no performance cost
 * A generic function is a function template, not a real function
 * It's not possible to obtain a pointer to a function template nor to put it into a separate compilation unit (which is the reason why C++ compiles so much slower than C)
 * The function template is _instantiated_ when it's used with template parameters or arguments allowing to deduce them
@@ -109,22 +101,10 @@ auto getNthElement(const std::map<IndexType, ValueType>& source, size_t order) {
         else
             return it;
     }
-    throw(std::out_of_range());
+    throw std::out_of_range();
 }
 ```
 Note: if the function's content is known in the header, its return value can be deduced (needs the `auto` keyword). In some complex cases, almost the entire function code is needed to derive the type, making some generic functions' return types unreadable before C++14.
-
----
-Functions and methods's arguments can be matched too:
-```C++
-template <typename ParentType, typename ReturnType>
-std::function<ReturnType()> standalone(ReturnedType(ParentType::*method)(), ParentType* parent) {
-    return [parent, method] () {
-        return (parent->*method)();
-    };
-}
-```
-You can see the whole usage and try it for yourself [online](https://repl.it/repls/RoundedSlightAnalysts).
 
 ---
 It can also match a template:
@@ -147,17 +127,6 @@ std::pair<int, int> extremities(std::vector<int>& values) {
 This can be used on multiple container types.
 
 Note: `template<typename> class` would be enough for a single template argument class, but the standard containers take several other template arguments that are almost always left default-valued.
-
----
-**Exercice:** Create a class that allows its descendants to bind its setters with a function call with a single parameter.
-```C++
-class Drill : public Binder {
-    void setDepth(float depth);
-    std::function<void(float)> depthSetter() {
-        return bindSetter(&Drill::setDepth);
-    }
-};
-```
 
 ---
 ## Variadic template
@@ -213,7 +182,7 @@ Note: like in any recursion, a base case is needed for the recursion to work. Th
 ```C++
 std::unique_ptr<std::string> str = std::make_unique<std::string>("Default content");
 ```
-Notice that even if several first arguments are explicitly stated, the missing ones are left to be derived from arguments.
+Note: even if several first template arguments are explicitly stated, the missing ones are left to be derived from function arguments.
 
 ---
 ## if constexpr
@@ -259,6 +228,7 @@ There are other checks available
 * `std::is_same<T1, T2>::value`
 * `std::is_base_of<Base, Derived>::value`
 * ... (see [CppReference](https://en.cppreference.com/w/cpp/types) for more)
+
 Many of these can be shortened by appending `_v` at the end of the check's name and skipping the `::value` part, like `std::is_base_of_v<Base, Derived>`, but not all.
 
 ---
@@ -266,6 +236,7 @@ Types can be transformed if necessary:
 * `std::remove_const<T>::type` - outputs the same type as `T`, but not const
 * `std::remove_pointer<T>::type`
 * `std::decay<T>::type` - modifies the type of `T` to be passed by value
+
 They can be shortened like `std::decay<T>::type` to `std::decay_t<T>`.
 
 ---
@@ -278,12 +249,12 @@ It may be useful also elsewhere:
 decltype(data.begin()) position = seeker.getIteratorTo(data, element);
 ```
 If the expression in `decltype` is too long, you can store it:
-```
+```C++
 using DataType = decltype(*data.begin());
 ```
 
 ---
-**Exercice:** Write a variant of `std::max` that can take any number of arguments and returns the greatest one of them:
+**Exercise:** Write a variant of `std::max` that can take any number of arguments and returns the greatest one of them:
 ```C++
 int max = maximum(3, 8, 19, value);
 ```
@@ -299,18 +270,20 @@ This allows writing overloaded functions like these:
 ```C++
 template <typename T>
 void removeValue(T& container, decltype(std::declval<const T>()[0]) value) {
-    for (unsigned int i = 0; i < container.size(); i++) 
+    for (unsigned int i = 0; i < container.size(); i++) {
         if (container[i] == value) {
             container.erase(container.begin() + i);
             i--;
         }
+    }
 }
 template <typename T>
 void removeValue(T& container, decltype(std::declval<T>().begin()->second) value) {
-    for (auto it = container.begin(); it != container.end(); )
+    for (auto it = container.begin(); it != container.end(); ) {
         if (it->second == value) {
             it = container.erase(it);
         } else ++it;
+    }
 }
 ```
 If `T` is a vector, the second argument of the second overload is invalid and the first overload will be selected. If `T` is a map or unordered map, the second argument of the first overload will be invalid and the second overload will be selected.
@@ -351,7 +324,7 @@ template <typename T, decltype(std::declval<const T>()[0])* = nullptr>
 ```
 
 ---
-**Exercice:** Use SFINAE and a JSON or a XML library or just a string to string unordered map to create a serialising function that serialises numbers and strings normally and smart pointers and `std::optional` to these types as optional keys.
+**Exercise:** Use SFINAE and a JSON or a XML library or just a string to string unordered map to create a deserialising function that deserialises numbers and strings normally and smart pointers and `std::optional` to these types as optional keys.
 ```C++
 made.serialise("id", id); // std::string
 made.serialise("version", version) // int
@@ -389,7 +362,7 @@ It is very prone to ambiguous function call issues, especially with MSVC that ge
 
 ---
 ## Matching functions
-The most common case will be dealing with instances of `std::function`:
+Instances of `std::function` are usually sufficient to use functions as function arguments:
 ```C++
 template <typename Returned, typename... Args>
 void grabFunction(std::function<Returned(Args...)> func) {
@@ -420,7 +393,9 @@ std::function<Returned(Args...)> exportMethod(Object* instance, Returned(Object:
 //...
 std::string a = "Blablabla";
 auto clearMyString = exportMethod(&a, &std::string::clear);
+clearMyString();
 ```
+You can fiddle with it yourself [here](https://repl.it/repls/RoundedSlightAnalysts).
 
 ---
 Lambdas are not functions, they are classes. They however always have an overloaded `operator()`, which is a method
@@ -434,3 +409,12 @@ void grabFunction(T func) {
 ---
 ## Homework
 Create a `Bindable` class that has a `bind` method that can be applied to a member function and will return a lambda that accepts the same arguments as the member function.
+
+```C++
+class Drill : public Binder {
+    void setDepth(float depth);
+    std::function<void(float)> depthSetter() {
+        return bind(&Drill::setDepth);
+    }
+};
+```
