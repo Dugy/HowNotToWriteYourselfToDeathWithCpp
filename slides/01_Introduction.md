@@ -132,7 +132,7 @@ Because there are so many reasons why this cannot work, its implementation will 
 * Knowledge of C++ sufficient to write common stuff without checking solutions online
 * Understanding of object oriented design
 
-Being able to read C++ code and having written a few Python scripts with intense googling is **not enough.**
+Being able to read C++ code and having used some other object-oriented programming language is **not enough.**
 
 ---
 ## Coverage
