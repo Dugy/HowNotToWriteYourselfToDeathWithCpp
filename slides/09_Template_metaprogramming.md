@@ -10,7 +10,7 @@ There are multiple ways to implement a condition. Each of them may be suitable i
 C++17 adds the usually most convenient way to do it:
 ```C++
 template <typename Returned, typename Class, typename... Args>
-void execute(Class owner, Returned(Class::*func)(Args...)) {
+void report(Class owner, Returned(Class::*func)(Args...)) {
 	//...
 	if constexpr(std::is_void_v<Returned>) {
 		(owner->*func)(args...);
@@ -25,13 +25,13 @@ void execute(Class owner, Returned(Class::*func)(Args...)) {
 Function overloads can do the job as well:
 ```C++
 template <typename Class, typename... Args>
-void execute(Class owner, void(Class::*func)(Args...)) {
+void report(Class owner, void(Class::*func)(Args...)) {
 	//...
 	(owner->*func)(args...);
 	//...
 }
 template <typename Returned1, typename Returned2, typename Class, typename... Args>
-void execute(Class owner, std::pair<Returned1, Returned2>(Class::*func)(Args...)) {
+void report(Class owner, std::pair<Returned1, Returned2>(Class::*func)(Args...)) {
 	//...
 	auto returned = (owner->*func)(args...);
 	result[0].serialise(returned.first);
@@ -44,24 +44,24 @@ void execute(Class owner, std::pair<Returned1, Returned2>(Class::*func)(Args...)
 Template specialisation is the most powerful of them all, but also the least convenient.
 ```C++
 template <typename Returned, typename Class, typename... Args>
-struct Executor {
-	void execute(Class owner, void(Class::*func)(Args...)) {
+struct Report {
+	void report(Class owner, void(Class::*func)(Args...)) {
 		//...
 		result.serialise((owner->*func)(args...));
 		//...
 	}
 };
 template <typename Class, typename... Args>
-struct Executor<void, Class, Args...> {
-	void execute(Class owner, void(Class::*func)(Args...)) {
+struct Report<void, Class, Args...> {
+	void report(Class owner, void(Class::*func)(Args...)) {
 		//...
 		(owner->*func)(args...);
 		//...
 	}
 };
 template <typename Returned1, typename Returned2, typename Class, typename... Args>
-struct Executor<std::pair<Returned1, Returned2>, Class, Args...> {
-	void execute(Class owner, std::pair<Returned1, Returned2>(Class::*func)(Args...)) {
+struct Report<std::pair<Returned1, Returned2>, Class, Args...> {
+	void report(Class owner, std::pair<Returned1, Returned2>(Class::*func)(Args...)) {
 		//...
 		auto returned = (owner->*func)(args...);
 		result[0].serialise(returned.first);
