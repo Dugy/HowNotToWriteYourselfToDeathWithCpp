@@ -4,6 +4,8 @@ These are little details that are usually several levels below the usual level o
 * Some part is performance critical (and optimisation can be easier than parallelism)
 * Reinventing the wheel (if the usual one doesn't fit your needs)
 
+These rules apply to usual architectures like amd64, x86 or ARM. Some unusual architectures may behave differently. Also, compilers tend to have compiler-specific settings that can cause nonstandard memory layouts (such as `#pragma pack`).
+
 ---
 ## Data in struct or class
 A structure fundamentally differs from a primitive type:
@@ -11,6 +13,8 @@ A structure fundamentally differs from a primitive type:
 * A structure will be saved on an address so that each of the primitive types it contains or its members contain will be saved on an address divisible by its size
 
 Together, it means that a structure containing `int32_t`, `uint16_t`, `int16_t` and `uint8_t` will be on an address divisible by 4 because the largest variable's size is 4 bytes.
+
+While it is possible for a variable to exist on an adress that isn't divisible by its size, its usage is inefficient and thus memory manipulation tricks or nonstandard compiler intrinsics are needed to place them there.
 
 ---
 The offsets of members can be exactly determined
@@ -32,12 +36,6 @@ struct B : A {
 To play with this, there is a built-in macro `offsetof`. The `std::array` container is your friend here, because it is a local array with STL-like access.
 
 ---
-### Polymorphism
-A polymorphic class has a pointer to its vtable at offset 0, so the first element starts at offset 8.
-
-Virtual inheritance causes members to be accessed through vtable, so offsets change between parent and child.
-
----
 ### Multiple inheritance
 In case of multiple inheritance, the parent classes are saved in the order they are listed, followed by the child's members.
 
@@ -46,6 +44,12 @@ struct T : std::string /*offset 0*/, std::vector /*offset 32*/ {
 	int a; // offset 56
 }; // Don't do this! STL classes don't have virtual destructors!
 ```
+
+---
+### Polymorphism
+A polymorphic class has a pointer to its vtable at offset 0, so the first element starts at offset 8.
+
+Virtual inheritance causes ancestor classes to be placed differently and accessed through vtable, making it far less predictable.
 
 ---
 ### Exercice
@@ -166,7 +170,7 @@ converter.text[0] = 65; // 'A'
 ```
 Will `converter.numeric` be 0x65 or 0x65000000?
 
-Most likely, it will be the 0x65, because little endian is used far more than big endian.
+Most likely, it will be the 0x65, because little endian is used far more than big endian. But it shouldn't be taken for granted.
 
 ---
 Endianness is usually very annoying to deal with. Before C++20, it cannot be detected at compile time.
@@ -227,4 +231,4 @@ static struct : Message {
 status.from(received);
 if (status.online) //...
 ```
-There are more ways to do this if you assume that the messages will have no more than 256 values and will not contain the byte sequence 0xFEDCBA9876543210.
+There are more ways to do this if you assume that the messages will have no more than 256 values and will not contain the byte sequence 0xFEDCBA9876543210 (this is an exercice, in a real application, this would be a security vulnerability).
