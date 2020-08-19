@@ -114,7 +114,7 @@ std::shared_ptr<T> defaultShared();
 
 But it could be very useful to shorten code:
 ```C++
-namePtr(std::make_shared<std::string>()),
+namePtr(std::make_unique<std::string>()),
 // becomes
 namePtr(defaultShared());
 ```
@@ -124,14 +124,10 @@ But is there really no trick to get it running anyway?
 ---
 There is one! We can abuse implicit conversion.
 
-There is a non-template function that returns a single type. The type can be implicitly converted to whatever we want. Conversion constructor cannot be used because `std::shared_ptr` is standardised, but the returned class may have a conversion operator defined.
+There is a non-template function that returns a single type. The type can be implicitly converted to whatever we want. Conversion constructor cannot be used because `std::unique_ptr` comes from the standard library and shouldn't be inherited from, but the returned class may have a conversion operator defined.
 
 ```C++
 struct SmartPointerInitialiser {
-	template <typename T>
-	operator std::shared_ptr<T>() {
-		return std::make_shared<T>();
-	}
 	template <typename T>
 	operator std::unique_ptr<T>() {
 		return std::make_unique<T>();
@@ -162,30 +158,13 @@ An auxiliary object's destructor is called when the object runs out of scope, so
 
 ```C++
 {
-	Command cmd("destroy");
+	Command cmd(communicator, "destroy");
 	cmd->*"target" = "PQ712";
 	cmd->*"protocol" = "Cobra";
 	cmd->*"strategy" = "B27";
 } // sent
 ```
 Be careful about errors. They need to be handled with exceptions and destructors that throw need to be marked as such or the program will terminate. Also, throwing destructors shouldn't be used for anything else than fatal erros because an exception thrown during exception handling will cause the program to abort if it reaches the context where the first exception is handled.
-
----
-## Stateful initialisation
-In most cases, the program is easier to use if it's stateless. It cannot be detected at compile time that an object is in a state where some operation cannot be executed on it, making it error-prone and counter-intuitive.
-
-But in some cases, it can be useful. In some cases, auxiliary objects with RAII can be used to ensure the state is reset when done.
-```C++
-auto state = makeRemote("turboencabulator");
-addMethod("initialise", this, &Turboencabulator::initialise);
-{
-	auto state = makeComponent("basePlate");
-	addMethod("temperature", this, &Turboencabulator::basePlateTemperature);
-	addMethod("load", this, &Turboencabulator::basePlateLoad);
-	//...
-```
-
-The state may be stored in a parent method. But it can also be in a `static thread_local` variable.
 
 ---
 ## Singleton
@@ -323,6 +302,20 @@ Octopus octopus = {{basicProperties}, .tentacles = 10, .changesColour = true};
 
 ---
 Aggregate initialisation can be used with dynamic allocation, but not with smart pointers. This restricts its usefulness.
+
+This was used much more in C, C++ has constructors that are more convenient to use. However, if the class is simple and created at only one location (or maybe two), writing a constructor can be unnecessarily lengthy.
+
+```C++
+struct {
+	Element* parent;
+	int x;
+	int parentOffset() const {
+		return parent->parent->offset.x;
+	}
+} offset = { this, 0 };
+```
+---
+
 
 ---
 ## Design philosophy

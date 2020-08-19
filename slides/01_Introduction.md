@@ -47,7 +47,7 @@ std::string description;
 if (entry->has_child("description"))
   description = entry->get_child("descirption").contents();
 ```
-It's also very easy to forget to paste the `"description"` string over whatever that was pasted.
+It's also very easy to forget to paste the `"description"` string over every occurrence of the string that was pasted, leaving the old one somewhere.
 
 ---
 ### Atrocious to use
@@ -105,7 +105,7 @@ This problem is called *technical debt*. If you don't repay it, it will grow ind
 
 A single duplication is not a big deal and fixing it may not even be worth the effort. A fivefold repetition of similar code is a budding problem. Having to repeat the same code twice any time some tool is used is a clear sign that tool is used badly or badly designed.
 
-Having to write some repetitive code more than once is a sign of impending disaster.
+Having to write some repetitive piece of code more than once is a sign of impending disaster.
 
 ---
 When some code is repeated, a tool for doing it without writing too much code is needed. The more it is used, the more complex it can be (in that case, automated tests are needed). Not having to write repetitive code when using it can justify using repetitive code when implementing it.
@@ -117,14 +117,14 @@ class ComponentInformation : public Serialisable {
   // ...
 };
 ```
-```
+```C++
 ComponentInformation component;
 if (format == Format::XML)
   component = parsed.xmlCode;
 else if (format == Format::JSON)
   component = parsed.jsonCode;
 ```
-Because there are so many reasons why this cannot work, its implementation will be explained in the last lesson. Let us start first with the easiest methods.
+Because there are so many reasons why the code above cannot work, its implementation will be explained in the last lesson. Let us start first with the easiest methods.
 
 ---
 ## Requirements
@@ -212,7 +212,7 @@ else if (lines[i].find("</goal>") != std::string::npos)
     in_goal = false;
 // 150 more lines of this
 ```
-Note: I stumbled upon this code in a real project, the original was in Python.
+Note: I stumbled upon this code in a real project, though original was written in Python.
 
 ---
 Using regex instead of substring search:
@@ -232,7 +232,7 @@ Using regex instead of substring search:
     }
   }
 ```
-The code also runs much faster.
+The code also runs faster.
 
 ---
 Even that regex isn't so necessary:
@@ -334,6 +334,7 @@ serialiseString("brief", saved.brief);
 serialiseString("version", saved.version);
 serialiseString("author", saved.author);
 ```
+Of course, it doesn't have to be a lambda. Depending on the situation, it might be better to use a helperfunction, a helper class, a helper method, a parent class with helper methods et cetera.
 
 ---
 #### Generic lambdas
@@ -483,6 +484,7 @@ Use exceptions when:
 _Don't_ use exceptions when:
 * If it is part of a use case
 * If it is thrown too often in the context
+* When the program is about to be released and too many contexts lack catch blocks
 
 Use them as often as possible without making it annoying to run the program in a debugger set to pause on all exceptions.
 
@@ -504,8 +506,10 @@ struct PowerError : std::runtime_error {
 ## Avoiding error prone constructs
 Searching for an error through many files can take significantly more time than writing a few lines of code. So making some code less prone to errors can be more important than low line count. That's basically the only purpose of const correctness and encapsulation.
 
+Other constructs that exist mainly to help avoid errors are smart pointers, `std::vector::at` or `std::jthread`.
+
 ---
-Writing the last line is very easy to forget and few would notice if it was accidentally removed.
+So, for example writing the last line is very easy to forget and few would notice if it was accidentally removed.
 ```C++
 XML::Element* parsed = XML::parseFile("settings.xml");
 Settings* settings;
@@ -519,7 +523,7 @@ if (!settings) {
 }
 delete parsed;
 ```
-Also, `settings` isn't initialised to null pointer, so if it wasn't running during program startup, failing to load the settings would probably not cause default settings to be generated and segfault instead.
+Also, `settings` isn't initialised to null pointer, so failing to load the settings would often cause a segfault instead of a generation of default settings.
 
 ---
 It's better with unique pointers:
@@ -575,7 +579,7 @@ const bool registered = registerDriver();
 Initialising the file-scoped global variable (happens before main) registers the driver into the global map used by the factory.
 
 ---
-Note: while this uses an unprotected global variable, it can be converted into a properly encapsulated singleton. The singleton and the factory themselves can be generic, avoiding a lot of code, but generics will be discussed later.
+Note: while this uses an unprotected global variable, it can be converted into a properly encapsulated singleton. The singleton and the factory themselves can be generic, allowing to write only one factory ever, but generics will be discussed later.
 
 ---
 ## Homework

@@ -17,12 +17,12 @@ Sometimes, a class does not belong into any of those, but it's rare. C++ is some
 
 ---
 ## SOLID principles and when to violate them
-SOLID principles are rules of thumb that help avoid later code duplication and technical debt.
+SOLID principles are rules of thumb that help avoid later code duplication and technical debt. You probably know them, so I'll run through it quickly.
 * Single Responsibility Principle - the hardest to maintain, the easiest to violate
-* Open-Closed Priciple - encapsulation, usually a no brainer
+* Open-Closed Priciple - encapsulation and suitability for inheritance, usually a no brainer
 * Liskov Substitution Principle - violated when a parent class reveals what subclass it is, not trivial to violate, troublesome if violated
 * Interface Segregation Principle - not very different from Single Responsibility Principle
-* Dependency Inversion Principle - needs forward declarations to violate, so be careful with them
+* Dependency Inversion Principle - because it's annoying to deal with petty details on every level and changing half of the code when changing basics
 
 Obeying them dogmatically or ignoring them leads to the LIQUID principles (Low in Quality, Unmatched in Desolation).
 
@@ -162,7 +162,7 @@ void stench(const std::string& stink) {
     // Move constructor called on the value returned by the operator+
 }
 ```
-Move constructor is mainly an optimisation or error prevention mechanism to avoid duplicating resources. The destructor will still be called, so the object must be left in a state the destructor can deal with.
+The move alllows implementing a `std::unique_ptr` and similar structures that can be moved but not copied, making their use much less error prone. The destructor will still be called, so the object must be left in a state the destructor can deal with.
 
 Parent classes and member classes are move constructed from respective parts of the argument unless their constructor arguments are explicitly stated. If they can all be move constructed, the move constructor usually does not have to be defined explicitly.
 
@@ -228,16 +228,19 @@ A class with at least one virtual method starts with a pointer to a static struc
 ```C++
 std::cout << typeid(whoami).name() << std::endl;
 ```
-The `typeid()` keyword will obtain an instance of `std::type_info` that can be used to obtain the type's name, a unique number representing it (`hash_code()`) or can be compared. Use this sparingly, it helps violate the Liskov substitution principle.ArBEAM,type
-ArBEAM,type
+The `typeid()` keyword will obtain an instance of `std::type_info` that can be used to obtain the type's name, a unique number representing it (`hash_code()`) or can be compared. Use this sparingly, it helps violate the Liskov substitution principle.
+
 ---
 The most usual case of using this is to allow a class to be properly destroyed while being used as its parent class.
 
-If a function _doesn't_ have a virtual destructor and its descendant is converted to it and destroyed as the parent class, the destructors of the descendant's members will not be called, possibly causing incorrect behaviour (mostly memory leaks). STL classes except streams and exceptions _don't_ have virtual destructors, so don't inherit from them unless you know what you are doing.
+Every class that could be inherited from and cast back to parent class should have a virtual destructor. If a function _doesn't_ have a virtual destructor and its descendant is converted to it and destroyed as the parent class, the destructors of the descendant's members will not be called, possibly causing incorrect behaviour (mostly memory leaks). STL classes except streams and exceptions _don't_ have virtual destructors, so don't inherit from them (unless you really know what you are doing).
+
 ```C++
 virtual ~PQRG() = default;
 ```
-This will cause the destructor of the actual class to be called, followed by the destructor of its parent, its parent's parent etc. I am just repeating this because it's easy to forget.
+This will cause the destructor of the actual class to be called, followed by the destructor of its parent, its parent's parent etc. I am just repeating this because it's easy to forget. Any inheriting class will have a virtual destructor, even if not explicitly declared.
+
+It may be useful to declare a class without a virtual destructor as `final`.
 
 ---
 Another crucial use of this functionality is to select the right virtual method (the pointer points to a table containing pointers to the actual methods that will be called by the virtual method calls). You do know this, of course.
@@ -295,7 +298,7 @@ Try it out [here](https://repl.it/repls/UnnaturalElasticDimension).
 
 ---
 ## Virtual inheritance
-Virtual inheritance causes a common parent class to be inherited only once.
+Virtual inheritance causes a common parent class to be inherited only once. In practice, there are often better solutions, so it is useful only in rare occasions.
 
 ![Memory layout virtual multiple inheritance](../pictures/virtual_multiple_inheritance.png)
 
