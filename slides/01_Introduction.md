@@ -96,7 +96,7 @@ if (format == Format::XML) {
     id = json["id"];
 }
 ```
-While it can be done quickly, it will slow further development down. Later additions to the deserialisation code will have to be duplicated as well.
+While these lines can be written quickly, it will slow further development down. Later additions to the deserialisation code will have to be duplicated as well.
 
 Have you noticed that _four_ edits are needed to rename the property?
 
@@ -116,13 +116,6 @@ class ComponentInformation : public Serialisable {
   Version version = key("version") = "1.0.0";
   // ...
 };
-```
-```C++
-ComponentInformation component;
-if (format == Format::XML)
-  component = parsed.xmlCode;
-else if (format == Format::JSON)
-  component = parsed.jsonCode;
 ```
 Because there are so many reasons why the code above cannot work, its implementation will be explained in the last lesson. Let us start first with the easiest methods.
 
@@ -212,7 +205,7 @@ else if (lines[i].find("</goal>") != std::string::npos)
     in_goal = false;
 // 150 more lines of this
 ```
-Note: I stumbled upon this code in a real project, though original was written in Python.
+Note: I stumbled upon this code in a real project, though it was originally written in Python.
 
 ---
 Using regex instead of substring search:
@@ -322,7 +315,7 @@ retval->addElement(authorElem);
 ```
 
 ---
-Assuming we don't know how to use the trick mentioned above, we can improve it using lambdas:
+Because the trick mentioned earlier is not very convenient, we can improve it using lambdas:
 ```C++
 auto serialiseString = [&retval] (const std::string& key, const std::string& serialised) {
   XML::Element* element = new XML::Element(key);
@@ -334,7 +327,7 @@ serialiseString("brief", saved.brief);
 serialiseString("version", saved.version);
 serialiseString("author", saved.author);
 ```
-Of course, it doesn't have to be a lambda. Depending on the situation, it might be better to use a helperfunction, a helper class, a helper method, a parent class with helper methods et cetera.
+Of course, it doesn't have to be a lambda. Depending on the situation, it might be better to use a helper function, a helper class, a helper method, a parent class with helper methods et cetera.
 
 ---
 #### Generic lambdas
@@ -521,6 +514,7 @@ try {
 if (!settings) {
   settings = new Settings();
 }
+//...
 delete parsed;
 ```
 Also, `settings` isn't initialised to null pointer, so failing to load the settings would often cause a segfault instead of a generation of default settings.

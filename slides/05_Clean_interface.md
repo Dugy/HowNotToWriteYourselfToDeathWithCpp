@@ -170,10 +170,10 @@ Be careful about errors. They need to be handled with exceptions and destructors
 ## Singleton
 Singleton is a class that can have only one instance. This allows the instance to be accessible from anywhere, helping avoid the necessity to pass references all around the program.
 ```C++
-auto response = ServerConnection::getInstance().sendMessage(command);
+Logger::getInstance().addDataPoint("heater voltage", voltage);
 ```
 
-It is also a highly controversial pattern that will spaghettify your code if used liberally.
+It is also a highly controversial pattern that will spaghettify your code if used liberally. There must be a strong motivation to turn a class into a singleton.
 
 ---
 ```C++
@@ -195,7 +195,7 @@ public:
 ---
 ### The dangers
 * Modifying the program to have more instances of the class requires extensive changes
-* A singleton may use other classes, some of which may be later altered to use the singleton, tangling all dependencies and causing a huge mess
+* A singleton may be used an inappropriate layers of abstraction, tangling all dependencies and causing a huge mess
 * The order of destruction of singletons is not defined and they are initialised in the order they are accessed
 * A singleton is difficult to test automatically, because the tests cannot destroy it and create it anew
 * If a singleton has a state, it can be left in an unsuitable one at a location that is difficult to find
@@ -203,14 +203,15 @@ public:
 
 ---
 ### How not to shoot yourself in the foot
-* Use a singleton only if you are sure there will never be any need for more instances (user input, GUI set, video card access, server connection)
+* Use a singleton only if you are sure there will never be any need for more instances (user input, GUI set, video card access, master server connection)
 * Make sure that the singleton encapsulates some functionality entirely and will never be needed by anything it uses
+* Ensure that using the singleton won't be able to cause damage if used on a wrong layer of abstraction or make it unavailable there
 * If the singleton' depends on other singletons, have `main()` or some other privileged function create it and destroy it explicitly
 * If automatic testing is applicable, implement some way to reset it
 * If the singleton is to have a state, it should be `thread_local` or mutex-protected and RAII should guarantee it will not be left in a bad one
 
 ---
-### A safer singleton
+### A safer and testing-friendly singleton
 ```C++
 class Input final {
 	Input() {
@@ -222,9 +223,9 @@ class Input final {
 		static std::unique_ptr<Input> instancePtr;
 		return instancePtr;
 	}
-	static void initialise() {
+	static void setInstance(std::unique_ptr<Input> assigned) {
 		auto& instance = getInstanceInternal();
-		instance = std::unique_ptr<Input>(new Input);
+		instance = std::move(assigned);
 	}
 	static void terminate() {
 		auto& instance = getInstanceInternal();
@@ -295,7 +296,7 @@ For clarification, member names can be written explicitly:
 struct Octopus : Animal {
 	int tentacles;
 	bool changesColour;
-};
+};zle
 //...
 Octopus octopus = {{basicProperties}, .tentacles = 10, .changesColour = true};
 ```
