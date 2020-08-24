@@ -103,7 +103,7 @@ Have you noticed that _four_ edits are needed to rename the property?
 ---
 This problem is called *technical debt*. If you don't repay it, it will grow indefinitely, until development is nigh impossible.
 
-A single duplication is not a big deal and fixing it may not even be worth the effort. A fivefold repetition of similar code is a budding problem. Having to repeat the same code twice any time some tool is used is a clear sign that tool is used badly or badly designed.
+A single duplication is not a big deal and fixing it may not even be worth the effort. A fivefold repetition of similar code is a budding problem. Having to repeat some already repetitive code twice any time some tool is used is a clear sign that tool is used badly or badly designed.
 
 Having to write some repetitive piece of code more than once is a sign of impending disaster.
 
@@ -378,12 +378,14 @@ else if (n<90) { n = n-80; display(4,8); display(5,n);}
 else if (n>=90) { n = n-90; display(4,9); display(5,n);}
 ```
 
+The value of `n` will be in the range from 0 to 99.
+
 ---
 Improve this code:
 ```C++
 delay(50);
 clear(i);
-NumberZero(i); // functions taking an int and returning void
+NumberZero(i);
 delay(50);
 clear(i);
 NumberOne(i);
@@ -401,6 +403,7 @@ clear(i);
 NumberFive(i);
 delay(50);
 ```
+`NumberZero`, `NumberOne` et cetera are free functions that take an int argument and return void
 
 ---
 ### Exceptions
@@ -494,6 +497,26 @@ struct PowerError : std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 ```
+### Exercise
+Improve this code:
+```C++
+JSON::Entry* idEntry;
+if (!json->getEntry("id", idEntry))
+  return false;
+if (!idEntry->getAsType(_id))
+  return false;
+JSON::Entry* nameEntry;
+if (!json->getEntry("name", nameEntry))
+  return false;
+if (!nameEntry->getAsType(_name))
+  return false;
+JSON::Entry* portEntry;
+if (!json->getEntry("port", portEntry))
+  return false;
+if (!portEntry->getAsType(_port))
+  return false;
+```
+Challenge: Do it without exceptions, but without macros or more than one line per entry.
 
 ---
 ## Avoiding error prone constructs
@@ -522,9 +545,9 @@ Also, `settings` isn't initialised to null pointer, so failing to load the setti
 ---
 It's better with unique pointers:
 ```C++
-std::unique_ptr<XML::Element> parsed = XML::parseFile("settings.xml");
 std::unique_ptr<Settings> settings;
 try {
+  std::unique_ptr<XML::Element> parsed = XML::parseFile("settings.xml");
   settings = std::make_unique<Settings>(parsed);
 } catch (...) {
   std::cerr << "Loading settings failed!";
@@ -582,17 +605,17 @@ Improve this code:
 #define none std::string::npos
 if (switches.find("-h") != none || switches.find("--help") != none)
   runProperties[PROP_HELP] = true;
-else if (switches.find("-v") != none || switches.find("--verbose") != none)
+if (switches.find("-v") != none || switches.find("--verbose") != none)
   runProperties[PROP_VERBOSE] = true;
-else if (switches.find("-r") != none || switches.find("--recursive") != none)
+if (switches.find("-r") != none || switches.find("--recursive") != none)
   runProperties[PROP_RECURSIVE] = true;
-else if (switches.find("-f") != none || switches.find("--force") != none)
+if (switches.find("-f") != none || switches.find("--force") != none)
   runProperties[PROP_FORCE] = true;
-else if (switches.find("-F") != none || switches.find("--find-missing") != none)
+if (switches.find("-F") != none || switches.find("--find-missing") != none)
   runProperties[PROP_FIND_MISSING] = true;
-else if (switches.find("-e") != none || switches.find("--exclude") != none)
+if (switches.find("-e") != none || switches.find("--exclude") != none)
   runProperties[PROP_EXCLUDE] = true;
-else if (switches.find("-d") != none || switches.find("--dryrun") != none)
+if (switches.find("-d") != none || switches.find("--dryrun") != none)
   runProperties[PROP_DRYRUN] = true;
 // ...
 ```
