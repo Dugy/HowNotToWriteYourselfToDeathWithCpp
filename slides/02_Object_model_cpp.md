@@ -44,7 +44,7 @@ If some program parts separated because of the Single Responsibility Principle a
 
 ---
 ### Dependency Inversion Principle
-It means simply that if class A is used by class B, no class used by class A should use class B. It's not possible without forward declaration anyway. Violating this rule causes longer compilation times and leads to further violations of SOLID principles.
+If class A is used by class B, no class used by class A should use class B. It's not possible without forward declaration anyway. Violating this rule causes longer compilation times and leads to further violations of SOLID principles.
 
 However, it happens that object A needs to use object B while object B uses object A. It can usually be solved by changing the program's structure:
 * You can have three classes. Class A is used by class B, class B is used by class C that also inherits from A.
@@ -52,7 +52,7 @@ However, it happens that object A needs to use object B while object B uses obje
 
 ---
 ### When to violate them
-* Value classes rarely need encapsulation. Any class with too many setters and getters is badly designed and may need a value class with all the properties accessed by a single function (it may also be a private parent class).
+* Value classes often don't need encapsulation. Any class with too many setters and getters is badly designed and may need a value class with all the properties accessed by a single function (it may also be a private parent class).
 * Manager and relationship classes can have circular dependencies. It often happens that such a class is used logically as one class, but in the program, it's actually a group of classes. A group of cooperating classes should use the `friend` declaration to access each other's private members, keeping them inaccessible to everything outside.
 * Adherence to the Single Responsibility Principle can also be overdone. If too much code is needed to separate what seems to be two responsibilities, they might not really be two responsibilities. Small functionality can also be repeated if more code is needed to use it than to reimplement it.
 
@@ -76,9 +76,9 @@ A destructor is called:
 * When `delete` is called
 * Right after the line where a temporary unnamed object is used
 ```C++
-{
+{ // Memory allocated
     std::string strink("stronk"); // Constructor with an argument "stronk" is called
-} // Destructor called
+} // Destructor called, memory deallocated
 ```
 
 ---
@@ -231,7 +231,7 @@ std::cout << typeid(whoami).name() << std::endl;
 The `typeid()` keyword will obtain an instance of `std::type_info` that can be used to obtain the type's name, a unique number representing it (`hash_code()`) or can be compared. Use this sparingly, it helps violate the Liskov substitution principle.
 
 ---
-The most usual case of using this is to allow a class to be properly destroyed while being used as its parent class.
+The most usual case of using the pointer to class information is to allow a class to be properly destroyed while being used as its parent class.
 
 Every class that could be inherited from and cast back to parent class should have a virtual destructor. If a function _doesn't_ have a virtual destructor and its descendant is converted to it and destroyed as the parent class, the destructors of the descendant's members will not be called, possibly causing incorrect behaviour (mostly memory leaks). STL classes except streams and exceptions _don't_ have virtual destructors, so don't inherit from them (unless you really know what you are doing).
 
@@ -300,7 +300,7 @@ Try it out [here](https://repl.it/repls/UnnaturalElasticDimension).
 ## Virtual inheritance
 Virtual inheritance causes a common parent class to be inherited only once. In practice, there are often better solutions, so it is useful only in rare occasions.
 
-![Memory layout virtual multiple inheritance](../pictures/virtual_multiple_inheritance.png)
+![Memory layout of virtual multiple inheritance](../pictures/virtual_multiple_inheritance.png)
 
 ---
 ```C++
@@ -330,6 +330,14 @@ In this case, it's suitable to use a mixin. A mixin class `C` would inherit from
 Try it out [here](https://repl.it/repls/DelectableSmartLight).
 
 ---
+### Exercise
+Use a mixin to create the following group of classes:
+* Class `IDevice` is an interface with one method that allows some kind of communication
+* Class `IDeviceWithSavedData` is an interface inheriting from `IDevice` that adds a method to read a ROM on the device
+* Class `BFG9000` that implements the `IDevice` interface (use whatever simplification you want)
+* Class `BFG10000` that implements the `IDeviceWithSavedData` interface, using the implementation of `IDevice` of `BFG9000`
+
+---
 ### Homework
 You have a base class called `Device` that manages access to a hardware device connected through some protocol. There is a group of devices that have random subsets of these capabilities:
 * Device has accessible EEPROM memory with some internal data stored as pairs of strings (or whatever else as it fits you)
@@ -338,4 +346,4 @@ You have a base class called `Device` that manages access to a hardware device c
 * Device amplifies a signal according to the requested amplification
 * Device manages other devices
 
-Implement a simple imitation of the `Device` classes as it fits you. Then create classes for the specific hardware properties that use the `Device` class to provide methods for setting values on devices. Finally, implement a classes representing specific devices that have subsets of these capabilities inheriting from their respective classes.
+Implement a simple imitation of the `Device` classes as it fits you. Then create classes for the specific hardware properties that use the `Device` class to provide methods for setting values on devices. Finally, implement classes representing specific devices that have subsets of these capabilities inheriting from their respective classes.
