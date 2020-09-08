@@ -146,7 +146,7 @@ struct RobotController {
 };
 ```
 ```C++
-robot->orientation[Orientation::X] = plan.now().x;
+robotController->orientation[Orientation::X] = plan.now().x;
 ```
 
 ---
