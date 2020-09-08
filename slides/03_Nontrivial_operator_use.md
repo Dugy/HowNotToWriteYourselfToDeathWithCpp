@@ -180,7 +180,7 @@ However, the paths to nested objects are annoyingly long, so it would be more co
 ```C++
 settings = coordinates;
 settings = city;
-settings = timeZone(city);
+settings = timeZone(city); // Could also be derived after the previous assignment
 ```
 But there can't be a huge class containing all those settings because of the difficulties caused by violations of the Single Responsibility Principle.
 
@@ -189,7 +189,6 @@ A possible way to do it is to make the class inherit from `Location` and other c
 ```C++
     using Location::operator=;
 ```
-
 
 If that's not feasible (for example if the class is used multiple times), the assignment operator can have a custom overload:
 ```C++
@@ -222,6 +221,8 @@ if (laser) {
 }
 ```
 Note: The syntax is somewhat unusual, because the return value is specified after the `operator` keyword rather than before.
+
+Note #2: User-defined conversion operators do not apply transitively, but conversions between integer and floating point types can apply afterwards.
 
 ---
 It can be used to create an imitation of another type that silently performs additional operations when used:
@@ -271,7 +272,7 @@ float upToThree = unpredictable * 3;
 
 ---
 ## Operators new and delete
-If you want some classes to be allocated differently than the standard allocator does, you can overload the `new` and `delete` operators. This may be needed for a variety of niche reasons:
+If you want some classes to be allocated differently than the standard allocator does, you can overload the `new` and `delete` operators. This may be needed for a variety of _niche_ reasons:
 * Allowing a parent class to learn the size of the derived class that is created
 * Indexing the objects
 * Zeroing memory after delete, or filling it with invalid data
@@ -301,14 +302,14 @@ void operator delete(void* pointer) // implicitly static
 }
 ```
 
-If it's not within a class, it applies globally.
+If it's not within a class, it applies globally, on the linker level.
 
 ---
 ## Homework
 Create three classes that behave like integer, float and string. They all inherit from a common ancestor and override its methods for serialisation and deserialisation (JSON, XML, whatever you like). Create a class that can be used to initialise them all. They will use the same object to save their values when they're destroyed.
 
 ```C++
-Electrocard::Electrocard(const nlohmann::json& configuration) :
+Electrocard::Electrocard(nlohmann::json& configuration) :
     configurator(this, configuration, "electrocard"),
     frequency(configurator, "freq"),
     maxVoltage(configurator, "voltage"),
