@@ -22,7 +22,7 @@ SOLID principles are rules of thumb that help avoid later code duplication and t
 * Open-Closed Priciple - encapsulation and suitability for inheritance, usually a no brainer
 * Liskov Substitution Principle - violated when a parent class reveals what subclass it is, not trivial to violate, troublesome if violated
 * Interface Segregation Principle - not very different from Single Responsibility Principle
-* Dependency Inversion Principle - because it's annoying to deal with petty details on every level and changing half of the code when changing basics
+* Dependency Inversion Principle - because it's annoying to deal with petty details on every level and changing half of the codebase when changing basics
 
 Obeying them dogmatically or ignoring them leads to the LIQUID principles (Low in Quality, Unmatched in Desolation).
 
@@ -77,7 +77,9 @@ A destructor is called:
 * Right after the line where a temporary unnamed object is used
 ```C++
 { // Memory allocated
+    dint += 15;
     std::string strink("stronk"); // Constructor with an argument "stronk" is called
+    dint -= 15;
 } // Destructor called, memory deallocated
 ```
 

@@ -10,6 +10,13 @@ std::string operator*(const std::string base, int multiplier) {
 ```
 They also shouldn't be used much because they can make the code difficult to read. Arithmetic operators should be overloaded only for classes that represent mathematical entities with such operations defined, unlike in the example above.
 
+Here is an even worse case:
+```C++
+device.setVoltage(newValue); // boring
+device,setVoltage,newValue; // everyone likes puzzles
+// Operator comma with the custom global variable type returns a class with overloaded comma operator
+```
+
 ---
 ## Function call operator
 
@@ -71,7 +78,7 @@ void operator() (float& value, const std::string& name) {
 ```
 
 ---
-### Exercice:
+### Exercise:
 Write a function that calls a functor when done.
 ```C++
 fitAmbihelicalHexnuts(hexnuts, hints, [] (int seconds) {
@@ -96,10 +103,10 @@ if (plasmaMirror->canMoveX())
 ```
 In this case, the `plasmaMirror` variable is some class wrapping a class, giving const access to it using the `->` operator and a non-const access using the `edit()` method that does some side-effect, for example marking some config file as dirty and in need of update when the program exits.
 
-If you need a dereference-like operation that takes an argument, you can overload the `->*` operator.
+If you need a dereference-like operation that takes an argument, you can overload the `->*` operator (its precedence is rather low, may need extra parentheses if something is called on the result).
 
 ---
-The dereference operator is a rather special one because it also eats up the dot operator on the class it outputs. Therefore, it's necessary for it to return a pointer to a class or something that has an overloaded dereference operator itself.
+The dereference operator is a rather special one because it also recursively dereferences its outputs until it finds something the `->` operator can't be applied to. Therefore, it's necessary for it to return a pointer to a class or something that has an overloaded dereference operator itself.
 ```C++
 PlasmaMirror* operator->() {
     _settings->dirty = true;
@@ -143,7 +150,7 @@ robot->orientation[Orientation::X] = plan.now().x;
 ```
 
 ---
-### Exercice:
+### Exercise:
 Write a class that holds another class and counts the number of times it is accessed.
 ```C++
 properties.resetTimesAccessed();
@@ -184,7 +191,7 @@ A possible way to do it is to make the class inherit from `Location` and other c
 ```
 
 
-If that's not possible (for example if the class is used multiple times), the assignment operator can have a custom overload:
+If that's not feasible (for example if the class is used multiple times), the assignment operator can have a custom overload:
 ```C++
 Settings& operator=(const Location& location) {
     coordinates = location.coordinates;
@@ -217,21 +224,23 @@ if (laser) {
 Note: The syntax is somewhat unusual, because the return value is specified after the `operator` keyword rather than before.
 
 ---
-It can be used to create an imitation of another type that silently performs additional operations used:
+It can be used to create an imitation of another type that silently performs additional operations when used:
 ```C++
 class FakeInt {
-    int main;
-    int uses = 0;
+    int value;
+    int min = 0;
 public:
     operator int() {
-        uses++;
-        return main;
+        if (value < min)
+            throw std::runtime_error("Value too low");
+        return value;
     }
+    //...
 };
 ```
 This will be implicitly converted to `int` when arithmetic operations are performed.
 
-Be wary not to copy this into an `auto` variable, because you will end up with two trackers that will both act as `int`. You can make this class uncopiable.
+Be wary not to copy this into an `auto` variable, because you will end up with a copy of the object that will still act as `int`, possibly causing unwanted behaviour. You can make this class uncopiable.
 
 ---
 Together with the assignment operator, it can be used as a proxy to a variable that may need to be accessed in a special way (different format, mutex, different computer):
@@ -247,12 +256,13 @@ public:
         *_proxy = assigned / _scale;
         return assigned;
     }
+    //...
 };
 ```
 This doesn't enable `operator +=`, `operator -=` and similar, but that isn't what you want to do, as every assignment has an invisible overhead.
 
 ---
-### Exercice:
+### Exercise:
 Create a class that can be used as a float, but yields a different random value in the range betwen 0 and 1 whenever used in arithmetic.
 ```C++
 float upToTwo = unpredictable * 2;
