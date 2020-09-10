@@ -1,7 +1,7 @@
 # 4. Generic Functions and SFINAE
 These allow you to write code once and apply it to all types.
 ```C++
-template <typemame T>
+template <typename T>
 T secondPower(const T& number) {
     return number * number;
 }
@@ -40,18 +40,18 @@ auto button = std::make_unique<QPushButton>();
 Internally:
 * It's like dynamic typing, but it resolves types and finds errors at compile time and has no performance cost
 * A generic function is a function template, not a real function
-* It's not possible to obtain a pointer to a function template nor to put it into a separate compilation unit (which is the reason why C++ compiles so much slower than C)
+* It's not possible to obtain a pointer to a function template
 * The function template is _instantiated_ when it's used with template parameters or arguments allowing to deduce them
 * An instantiated function template is a regular function
 * An instantiated template is very likely to be inlined (avoiding the cost of a function call and allowing better optimisation) because it's always available to the compilation unit (like other functions defined in headers)
 
-Because of these constraints, a generic function can't be virtual.
+Because of these constraints, a generic function can't be virtual (however, a generic class can have virtual methods).
 
 ---
 **Exercice:** Write a generic function that removes an element at given index from a vector by moving the last element into its place and removing the last element (fast removal but without keeping the order).
 
 ```C++
-fastRemove(actions, i);
+fastErase(actions, i);
 ```
 
 ---
@@ -124,7 +124,7 @@ std::pair<int, int> extremities(std::vector<int>& values) {
     return edges(values);
 }
 ```
-This can be used on multiple container types.
+The `edges` function template can thus be used on multiple container types.
 
 Note: `template<typename> class` would be enough for a single template argument class, but the standard containers take several other template arguments that are almost always left default-valued.
 
@@ -265,6 +265,8 @@ _Substitution Failure Is Not An Error._ Ouch, that's so cryptic that maybe even 
 
 A function template may be conditionally prevented from being used by making one or more of its arguments semantically incorrect. The program itself remains correct.
 
+Many of its common use cases have been obsoleted by C++20's concepts.
+
 ---
 This allows writing overloaded functions like these:
 ```C++
@@ -334,6 +336,21 @@ made.serialise("comment", comment); // std::unique_ptr<std::string>
 ```
 
 ---
+It may be impractical to prevent a function template from matching more types than it should (which causes ambiguous call errors). In many cases, it can be avoided using function template specialisation:
+```C++
+template <typename T>
+void detailedPrint(T value) { // unspecialised
+  std::cout << value << std::endl;
+}
+
+template<>
+void detailedPrint<std::string>(std::string value) { // specialisation for std::string
+  std::cout << value << " (size: " << value.size() << ')' << std::endl;
+}
+```
+The specialisation does not have to be fully specialised, it only needs to be _more_ specialised, a subset of the possible matches of the unspecialised one.
+
+---
 ## Generic conversion operator
 This is where it's possible to deduce the return value of a function.
 ```C++
@@ -380,6 +397,8 @@ Member functions can be captured similarly:
 template <typename Object, typename Returned, typename... Args>
 void grabFunction(Returned(Object::*func)(Args...)) {
 ```
+
+Learning the parametres of constructors is [possible, but extremely tricky](https://github.com/alexpolt/luple).
 
 ---
 Example of usage:
