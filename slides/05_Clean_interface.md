@@ -9,7 +9,7 @@ There is a function, set of functions or even template class that has a lot of o
 
 ---
 ```C++
-struct PermissionFlags
+struct PermissionFlags {
 	enum Flags {
 		NONE = 0;
 		OWNER_READ = 1 << 0,
@@ -104,39 +104,53 @@ Create a set of overloaded functions that save variables to files. It must be ab
 * same for shared and unique pointers
 
 ---
-## Return value overloading
-This doesn't work:
-```C++
-// Outputs a shared_ptr to a valid default-initialised object
-template <typename T>
-std::shared_ptr<T> defaultShared();
-```
+## Friend methods
+The usual use of `friend` declaration is to grant access to private and protected members to a specific class or function. It's useful if a group of classes is supposed to work together, but without restricting their access to the limitations we need to impose to unrelated classes.
 
-But it could be very useful to shorten code:
-```C++
-namePtr(std::make_unique<std::string>()),
-// becomes
-namePtr(defaultShared());
-```
-
-But is there really no trick to get it running anyway?
+You probably know this.
 
 ---
-There is one! We can abuse implicit conversion.
-
-There is a non-template function that returns a single type. The type can be implicitly converted to whatever we want. Conversion constructor cannot be used because `std::unique_ptr` comes from the standard library and shouldn't be inherited from, but the returned class may have a conversion operator defined.
-
+It's also useful to write pseudo-methods that need to use multiple instances of the class (it's actually the intended way of doing so).
 ```C++
-struct SmartPointerInitialiser {
-	template <typename T>
-	operator std::unique_ptr<T>() {
-		return std::make_unique<T>();
+class Millimetres {
+	float value;
+	public:
+	// ...
+	friend Vector3<Millimetres> vectorise(Milimetres x, Milimetres y, Milimetres z) {
+		return Vector3<Millimetres>{ x, y, z};
 	}
 };
-SmartPointerInitialiser defaultSmart() {
-	return SmartPointerInitialiser{};
-}
+//...
+auto position = vectorise(parse("x"), parseMm("y"), parseMm("z"));
+```
+The `vectorise` function looks like a free function, but it isn't. Its existence isn't considered if neither of the arguments is of the `Millimetre` class.
 
+---
+It is also useful to conveniently overload operators from the left side:
+```C++
+struct Millimetres {
+	float value;
+	friend std::ostream& operator<<(std::ostream& out, const Millimetres& val) {
+		return out << val.value << " mm";
+	}
+};
+```
+
+---
+If the friend function's arguments don't contain the type where it's declared, it must be converted into a free function using a forward declaration:
+```C++
+class Block {
+	float value;
+	// ...
+	public:
+	//...
+	friend void decrease(BlockAccessor& accessor) {
+		auto lock = accessor.lock();
+		Block& block = lock->block;
+		block.value--;
+	}
+};
+void decrease(BlockAccessor&); // can be also backwards-declared
 ```
 
 ---
@@ -269,7 +283,7 @@ This feature is mainly a C remnant intended to keep C code compatible with C++, 
 
 Requirements for the class to be aggregate initialisable (as of C++17):
 * Can't be polymorphic (virtual methods are forbidden)
-* Can't have private or protected member variables or parent classes (parent classes themselves can have them)
+* Can't have private or protected parent classes or member variables (parent classes themselves can have them)
 * Can't have custom defined constructors
 
 ---
@@ -307,7 +321,7 @@ Aggregate initialisation can be used with dynamic allocation, but not with smart
 This was used much more in C, C++ has constructors that are more convenient to use. However, if the class is simple and created at only one location (or maybe two), writing a constructor can be unnecessarily lengthy.
 
 ```C++
-struct {
+struct { // Voldemort type, type name cannot be written
 	Element* parent;
 	int x;
 	int parentOffset() const {
@@ -327,7 +341,7 @@ Every approach has some tradeoffs between amount of code needed for using it, am
 ---
 When deciding whether to design an interface that needs little code:
 * Is the code used often enough? If not, keeping up with SOLID principles may be enough
-* Can performance matter in that part of code? If yes, don't use tricks that rely on virtual functions (`std::function` uses virtual functions)
+* Can performance matter in that part of code? If yes, don't use tricks that rely on virtual functions or dynamic allocation (`std::function` uses virtual functions and will resort to dynamic allocation for larger functors) or other performance-unfriendly tricks
 
 ---
 When looking for a way to allow using something with minimal code, it's better not to think about SOLID principles, but from the point of view of the user of the interface:
@@ -335,7 +349,7 @@ When looking for a way to allow using something with minimal code, it's better n
 * Some parts of the code have to be written in any case, like types of members
 * Anything else usually doesn't need to be written over and over
 
-The following shows that a getter/setter pair that convert a value and call a protocol need only one line to be wholly functional:
+The following code shows a getter/setter pair that convert a value and call a protocol need only one line to be wholly functional:
 ```C++
 class Motor : RemoteDevice {
 	const std::function<void(int, int, int)> callibrate = remoteMethod("cal");
@@ -357,6 +371,7 @@ positionY = 12;
 When deciding if an implementation that can be used with less code should be used over one that uses more code:
 * Is the idea too different from typical C++ code? If yes, is it used often enough to justify that every new programmer will have to read the documentation?
 * How easy is it to make mistakes by being careless? Can these mistakes be detected before they cause undefined behaviour?
+* Sometimes, it's better to need slightly more code if it can prevent wrong usage on syntactic level
 
 ---
 ## Homework

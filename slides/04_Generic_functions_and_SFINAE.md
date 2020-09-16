@@ -430,7 +430,7 @@ void grabFunction(T func) {
 Create a `Bindable` class that has a `bind` method that can be applied to a member function and will return a lambda that accepts the same arguments as the member function.
 
 ```C++
-class Drill : public Binder {
+class Drill : public Bindable {
     void setDepth(float depth);
     std::function<void(float)> depthSetter() {
         return bind(&Drill::setDepth);

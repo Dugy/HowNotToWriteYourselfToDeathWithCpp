@@ -185,6 +185,56 @@ staticSort(lowest, lower, upper, highest);
 ```
 
 ---
+## Side effects
+So far, template metaprogramming seemed completely functional, where result depended only on input.
+
+However, there is a way to get around it and cause compilation to have side effects. It's not a feature of the language, but rather an unexpected consequence of the standard. It can be used to access and assign global variables during the run of compilation from anywhere.
+
+It's unlikely to be ever used by accident and multiple assignment is not possible, so it's quite safe to work with. The possibility is subject to defect report 2118, but no work is being done to change it as there've been no good suggestion what to do with it.
+
+---
+The trick is that the function can be forward declared and defined as a friend method of a template wherever it's instantiated.
+
+```C++
+int compiledA();
+
+template <int num>
+struct A {
+  friend int compiledA() {
+    return num;
+  }
+};
+
+// this can be pretty much anywhere
+A<11> a;
+
+// ...
+int done = compiledA(); // will get 11
+```
+
+---
+In most cases, we'd like to use arrays. Forward declaring them is a bit tricky.
+```C++
+template <int N>
+struct Index {
+  friend constexpr int access(Index<N>);
+};
+
+template <int index, int num>
+struct A {
+  friend constexpr int access(Index<index>) {
+    return num;
+  }
+};
+
+// elsewhere
+A<0, 12> a;
+
+// ...
+int atIndex0 = access(Index<0>()); // will get 12
+```
+
+---
 ## Turing completeness of compile-time metaprogramming
 Because C++ templates can be used to implement both conditions and loops, they are Turing complete. This wasn't an intentional feature. It has several consequences:
 * The syntactic correctness of a C++ program is an undecidable problem
