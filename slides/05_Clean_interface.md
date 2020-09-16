@@ -63,6 +63,21 @@ Implement the `parseCsv()` function, but add also flags for throwing with any mi
 auto data = parseCsv("experimentalData.csv", ParseFlags::PEDANTIC | ParseFlags::width(4));
 ```
 
+Here's an example of code that can parse csv files:
+```C++
+std::vector<std::vector<float>> parsed;
+std::string line;
+while (std::getline(input, line, '\n')) {
+	parsed.emplace_back();
+	auto& writing = parsed.back();
+	std::string number;
+	std::stringstream lineStream(line);
+	while (std::getline(lineStream, number, ',')) {
+		writing.push_back(std::stof(number));
+	}
+}
+```
+
 ---
 ## Function overloading
 If two functions do the same thing, it makes sense to give them identical names.
@@ -126,7 +141,7 @@ auto position = vectorise(parse("x"), parseMm("y"), parseMm("z"));
 The `vectorise` function looks like a free function, but it isn't. Its existence isn't considered if neither of the arguments is of the `Millimetre` class.
 
 ---
-It is also useful to conveniently overload operators from the left side:
+It is also useful to conveniently overload operators from the right side:
 ```C++
 struct Millimetres {
 	float value;
@@ -353,8 +368,8 @@ The following code shows a getter/setter pair that convert a value and call a pr
 ```C++
 class Motor : RemoteDevice {
 	const std::function<void(int, int, int)> callibrate = remoteMethod("cal");
-	remoteValue<float> positionX = "xpos";
-	remoteValue<float> positionY = "ypos" & ratio(0.15);
+	remoteValue<float> positionX = access("xpos");
+	remoteValue<float> positionY = access("ypos") & ratio(0.15);
 //...
 callibrate(20, 10000, 300);
 positionX = 10;
