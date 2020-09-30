@@ -41,6 +41,9 @@ struct B : A {
 To play with this, there is a built-in macro `offsetof`. The `std::array` container is your friend here, because its layout is identical to a sequence of identical variables.
 
 ---
+A possible surprise is that using `sizeof` on a class can return a greater size then the end of the last member, because of the class' alignment.
+
+---
 ### Multiple inheritance
 In case of multiple inheritance, the parent classes are saved in the order they are listed, followed by the child's members.
 
@@ -57,7 +60,7 @@ A polymorphic class has a pointer to its vtable at offset 0, so the first elemen
 Virtual inheritance causes ancestor classes to be placed differently and accessed through vtable, making it far less predictable.
 
 ---
-### Exercice
+### Exercise
 Create a structure that allows accessing several named `int` members through array index usage. Do it without implementing any methods or operators.
 ```C++
 A a;
@@ -98,28 +101,28 @@ a.b2 = 3;
 ```
 
 ---
-### Exercice
+### Exercise
 Create a struct or union that can be used to represent a binary message that contains:
 * A 16 bit identifier
-* 12 boolean values informing about status
+* 4 boolean values informing about status
 * Three 8 bit values
 * A 16 bit value
 * A enum that has 14 possible values
 * A 32 bit checksum
 
-It must be as short as possible (14 bytes ideally) and its contents must be obtainable as an array of bytes without any conversions.
+It must be as short as possible (12 bytes ideally) and its contents must be obtainable as an array of bytes without any conversions.
 
 ---
 ## Data on stack
 A lot of variables on the stack may be optimised out, but it obeys some rules:
-* A variable declared lower is on a lower address (inverted compared to structs)
+* On most architectures, a variable declared lower is on a lower address (inverted compared to structs)
 * All variables are allocated when the block is entered
 * The variables' values are set on the lines where they are initialised
 
 This has rarely any effect, but it's not entirely inconsequential.
 
 ---
-It is possible for an object to detect if it's a member of a specific object (and supposed to work with it) or not. A member is initialised after the outer class' base class and on a higher address. An unrelated stack variable is initialised either later and on an lower address or earlier on a higher address.
+On most architectures, it is possible for an object to detect if it's a member of a specific object (and supposed to work with it) or not. A member is initialised after the outer class' base class and on a higher address. An unrelated stack variable is initialised either later and on an lower address or earlier on a higher address.
 ```C++
 struct StatusMessage : Message {
 	Register<int> value; // can check if it's not used outside and what is its parent
@@ -152,6 +155,7 @@ A custom smart pointer acting like a unique pointer needs:
 * A move assignment operator leaving null pointer behind and conditionally deleting old contents
 * A deleted copy assignment operator
 * A destructor conditionally deleting contents
+* An overloaded `bool` operator that returns if the value is not `nullptr`
 
 ---
 A custom smart pointer acting like a shared pointer needs:
@@ -166,7 +170,7 @@ An example of using a custom smart pointer for a copy-on-write string can be fou
 If you need additional operators (more ways of dereferencing or something), you may overload the rarely used operator `->*` with an empty custom type.
 
 ---
-### Exercice
+### Exercise
 Write your own implementation of a shared pointer, but with these key differences:
 * The reference counter is allocated together with the object (does not support weak pointers as a consequence)
 * Throws exceptions when dereferencing null pointers

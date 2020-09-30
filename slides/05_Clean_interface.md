@@ -388,4 +388,4 @@ When deciding if an implementation that can be used with less code should be use
 
 ---
 ## Homework
-Implement the functionality surrounding the `makeRemote` and `addMethod` functions or methods.
+Implement the functionality surrounding the `remoteValue` and `remoteMethod` functions or methods.

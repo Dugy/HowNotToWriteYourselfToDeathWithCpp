@@ -205,7 +205,7 @@ struct A {
   }
 };
 
-// this can be pretty much anywhere
+// this can be pretty much anywhere, but it must be actually compiled
 A<11> a;
 
 // ...

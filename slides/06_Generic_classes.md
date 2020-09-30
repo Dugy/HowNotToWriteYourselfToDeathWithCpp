@@ -87,12 +87,12 @@ The generic parent can safely cast itself to the descendant and use anything wit
 Because CRTP allows the parent to use pieces of its descendant's code, it is similar to some extent to virtual methods. There are some important differences, though.
 
 Advantages of CRTP:
-* Can call generic methods of the descendant
+* Can check for existence and call non-virtual methods of the descendant
 * Faster (can be inlined)
-* Less code in the descendant, because it can learn some additional information using template tricks
+* Less code in the descendant (it can learn some additional information using template tricks)
 
 Disadvantages of CRTP:
-* Cannot be used as an interface
+* Cannot be used as an interface (but it can use the template argument to implement an interface)
 * More complicated to implement the parent
 * Difficult to allow descendants of the CRTP inheriting class to use the CRTP
 
@@ -108,7 +108,7 @@ int size = chunk.size(); // implemented in SizeAware
 
 ---
 ## Template specialisation
-A generic class can have additional implementations designed to be more suited to specific types.
+A generic class can have additional implementations designed to be more suited to specific types. Unlike functions, they don't have to be completely specialised.
 ```C++
 template <typename First, typename Second, typename Third>
 struct Triplet {
@@ -154,7 +154,7 @@ struct Compress<Compressor, std::enable_if_t<std::is_base_of<Zip, Compressor>::v
 	constexpr static bool valid = true;
 	
 	static Data compress(Data value) {
-		return Zip::compress(value);
+		return Compressor::compress(value);
 	}
 };
 // ...
@@ -170,8 +170,8 @@ Template specialisation SFINAE has some advantages over function overloading SFI
 However, it is less convenient to use.
 
 ---
-Exercise:
-Create a `vectorify()` function that converts containers `std::unordered_map` and `std::list` into `std::vector`. In case of containers that contains pairs of indexes and elements, it should create vectors of pairs. Make it extendable with other types. It must return a custom error message if used on an unsupported type.
+### Exercice:
+Create a `vectorify()` function that converts containers `std::unordered_map` and `std::list` into `std::vector`. In case of containers that contain pairs of indexes and elements, it should create vectors of pairs. Make it extendable with other types. It must return a custom error message if used on an unsupported type.
 
 ---
 ## Recursion
@@ -190,8 +190,8 @@ public:
 
 ---
 And it can be used to implement recursion:
-```C++
 
+```C++
 template <typename T, typename... Ts>
 class Heterogenous {
     T _contained;
@@ -221,11 +221,11 @@ public:
 ---
 Remarks:
 * If a template method calls another template method, its type might not be known the time and the `<` template braces `>` will be mistaken for comparison operators, resulting in a syntax error; in that case, it's necessary to write the keyword `template` before the method name
-* The template class needs to be partially specialised for the base case
+* The template class needs to be partially specialised for the base case (to stop recursion before an error)
 * Template argument iteration is possible in many cases, but the recursive approach is usually easier
 
 ---
-## Exercise:
+# Homework:
 Create a class that holds more values of different types. Converting it to one of those types yields the value of that type.
 ```C++
 auto path = graph.findPath(start, end);
