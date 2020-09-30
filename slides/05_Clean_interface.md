@@ -344,8 +344,6 @@ struct { // Voldemort type, type name cannot be written
 	}
 } offset = { this, 0 };
 ```
----
-
 
 ---
 ## Design philosophy

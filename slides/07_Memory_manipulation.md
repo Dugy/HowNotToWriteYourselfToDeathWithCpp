@@ -3,18 +3,23 @@ These are little details that are usually several levels below the usual level o
 * Writing or reading binary data
 * Some part is performance critical (and optimisation can be easier than parallelism)
 * Reinventing the wheel (if the usual one doesn't fit your needs)
+* Cheating around the standard
 
 These rules apply to usual architectures like amd64, x86 or ARM. Some unusual architectures may behave differently. Also, compilers tend to have compiler-specific settings that can cause nonstandard memory layouts (such as `#pragma pack`).
+
+---
+## Quick question
+How would you implement a generic container that can have multiple implementations?
 
 ---
 ## Data in struct or class
 A structure fundamentally differs from a primitive type:
 * A primitive type that isn't larger than the word size (which is almost always true on 64-bit architectures) will be saved on an address divisible by its size or with offset divisible by its size
-* A structure will be saved on an address so that each of the primitive types it contains or its members contain will be saved on an address divisible by its size
+* A structure will be saved on an address so that each of the primitive types it contains or its members contain will be saved on an address divisible by its size (can be checked using `alignof`)
 
 Together, it means that a structure containing `int32_t`, `uint16_t`, `int16_t` and `uint8_t` will be on an address divisible by 4 because the largest variable's size is 4 bytes.
 
-While it is possible for a variable to exist on an adress that isn't divisible by its size, its usage is inefficient and thus memory manipulation tricks or nonstandard compiler intrinsics are needed to place them there.
+While it is usually possible for a variable to exist on an adress that isn't divisible by its size, its usage is inefficient and thus memory manipulation tricks or nonstandard compiler intrinsics are needed to place them there.
 
 ---
 The offsets of members can be exactly determined
@@ -33,21 +38,21 @@ struct B : A {
 	int b1; // offset 44
 };
 ```
-To play with this, there is a built-in macro `offsetof`. The `std::array` container is your friend here, because it is a local array with STL-like access.
+To play with this, there is a built-in macro `offsetof`. The `std::array` container is your friend here, because its layout is identical to a sequence of identical variables.
 
 ---
 ### Multiple inheritance
 In case of multiple inheritance, the parent classes are saved in the order they are listed, followed by the child's members.
 
 ```C++
-struct T : std::string /*offset 0*/, std::vector /*offset 32*/ {
+struct T : std::string /*offset 0*/, std::vector<int> /*offset 32*/ {
 	int a; // offset 56
 }; // Don't do this! STL classes don't have virtual destructors!
 ```
 
 ---
 ### Polymorphism
-A polymorphic class has a pointer to its vtable at offset 0, so the first element starts at offset 8.
+A polymorphic class has a pointer to its vtable at offset 0, so the first element starts at offset 8 (on 64-bit architectures).
 
 Virtual inheritance causes ancestor classes to be placed differently and accessed through vtable, making it far less predictable.
 
@@ -67,13 +72,15 @@ Union is like struct, but it has two important differences:
 * All offsets are 0
 * It cannot inherit or be inherited from
 
-The following can be, with proper methods, used as a representation of a short string with single instruction assignment or comparison:
+The following can be, with proper methods, used as a representation of a short string that can be hashed without iteration:
 ```C++
 union ShortString {
 	std::array<char, 8> letters;
 	uint64_t together;
 	//...
 ```
+
+Default copy constructors of classes that consist only of primitive types act like `memcpy`, so there's no need to optimise those using unions.
 
 ---
 ### Anonymous structs and unions
@@ -91,7 +98,7 @@ a.b2 = 3;
 ```
 
 ---
-## Exercice
+### Exercice
 Create a struct or union that can be used to represent a binary message that contains:
 * A 16 bit identifier
 * 12 boolean values informing about status
@@ -112,7 +119,7 @@ A lot of variables on the stack may be optimised out, but it obeys some rules:
 This has rarely any effect, but it's not entirely inconsequential.
 
 ---
-It is possible for a class to detect if it's a member of a specific class (and supposed to work with it) or not. A member is initialised after the outer class' base class and on a higher address. An unrelated stack variable is initialised either later and on an lower address or earlier on a higher address.
+It is possible for an object to detect if it's a member of a specific object (and supposed to work with it) or not. A member is initialised after the outer class' base class and on a higher address. An unrelated stack variable is initialised either later and on an lower address or earlier on a higher address.
 ```C++
 struct StatusMessage : Message {
 	Register<int> value; // can check if it's not used outside and what is its parent
@@ -131,7 +138,7 @@ Allocating a huge object on stack will cause a stack overflow when the block is 
 
 ---
 ## Custom smart pointers
-Smart pointers are so useful that their use is almost imperative. However, they don't always suit our needs, for example in these cases:
+Smart pointers are so useful that their use is almost imperative. However, the standard ones don't always suit our needs, for example in these cases:
 * PIMPL
 * Copy on write
 * Thread safety
@@ -143,7 +150,7 @@ A custom smart pointer acting like a unique pointer needs:
 * A move constructor leaving null pointers behind
 * A deleted copy constructor
 * A move assignment operator leaving null pointer behind and conditionally deleting old contents
-* A deleted move assignment operator
+* A deleted copy assignment operator
 * A destructor conditionally deleting contents
 
 ---
@@ -156,7 +163,13 @@ This is more complex than if it was acting like a unique pointer, but it usually
 
 An example of using a custom smart pointer for a copy-on-write string can be found [here](https://repl.it/repls/FoolhardyCluelessWaterfall).
 
-If you need additional operators (more ways of dereferencing or something), you may overload the rarely used operator `->*`.
+If you need additional operators (more ways of dereferencing or something), you may overload the rarely used operator `->*` with an empty custom type.
+
+---
+### Exercice
+Write your own implementation of a shared pointer, but with these key differences:
+* The reference counter is allocated together with the object (does not support weak pointers as a consequence)
+* Throws exceptions when dereferencing null pointers
 
 ---
 ## Endianness
@@ -173,7 +186,7 @@ Will `converter.numeric` be 0x65 or 0x65000000?
 Most likely, it will be the 0x65, because little endian is used far more than big endian. But it shouldn't be taken for granted.
 
 ---
-Endianness is usually very annoying to deal with. Before C++20, it cannot be detected at compile time.
+Endianness is usually very annoying to deal with. Without C++20, it cannot be detected at compile time.
 
 It rarely matters, in most cases when an array is cast to a larger type, the larger type is only compared and cast back.
 
