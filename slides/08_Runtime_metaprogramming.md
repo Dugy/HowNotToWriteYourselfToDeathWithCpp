@@ -16,7 +16,7 @@ It may happen that the program might need the user to supply formulae for some c
 
 `x * sin(angle + start_angle) + y`
 
-Parsing the formulae is an algorithm that will not be delved into. If you were going to implement it, better don't simplify the task with Polish notation. It is easier to parse, but atrocious to write.
+Parsing the formulae is an algorithm that will not be delved into. If you were going to implement it, better don't simplify the task by requiring Polish notation. It is easier to parse, but atrocious to write.
 
 To keep this example simple, each formula receives the variables as a an unordered map. Replacing the variable names with indexes when preparing and then calling it with a C-style array would make it run faster.
 ```C++
@@ -80,16 +80,16 @@ struct {
 	}
 } add = { 3 };
 ```
-Except that the member `added` is inaccessible from anywhere else but the `opearator()`.
+Except that the member `added` is inaccessible from anywhere else but the `opearator()` (but it's not really `private`).
 
 ---
 ### How `std::function` works
-This is not a working implementation, it just illustrates how it works:
+This is not a working or standard-compliant implementation, it just illustrates how it works:
 ```C++
 template<typename Func>
 struct function {
 	using rettype = typename return_type<Func>::type; // Not implementing these here
-	using arguments = typename return_type<Func>::type...;
+	using arguments = typename argument_type<Func>::type...;
 
 	struct Payload {
 		virtual rettype call(arguments... args) = 0;
@@ -142,6 +142,8 @@ std::shared_ptr<std::unique_ptr<std::function<int()>>> capture
 });
 ```
 
+There is, however, a little problem with circular reference that requires explicitly resetting the `unique_ptr`.
+
 ---
 ### Exercise
 Create a function that takes a lambda as argument and returns a shared pointer to an object that will call the lambda when destroyed.
@@ -168,7 +170,7 @@ Create a logger lambda that can be copied, but all copies share the same log fil
 ### Mutable lambda
 A typical lambda's overload of `operator()` is a const method. This still allows editing variables captured through pointers and references, so in most cases, it's enough.
 
-In order to turn a lambda into an object capable of changing its internal state, it must be declared `mutable`. This the overload of `operator()` to be nonconst.
+In order to turn a lambda into an object capable of changing its internal state, it must be declared `mutable`. This causes the overload of `operator()` to be nonconst.
 ```C++
 auto getCounter() {
 	return [count = 0] () mutable {
