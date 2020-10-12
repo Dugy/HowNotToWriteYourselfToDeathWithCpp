@@ -57,7 +57,7 @@ Extend the example to have it support also context specific functions with any n
 
 ```C++
 using Arguments = const std::unordered_map<std::string, double>&;
-using CustomFunctions = const std::unordered_map<std::string, std::function<std::vector<double>>>&;
+using CustomFunctions = const std::unordered_map<std::string, std::function<double(std::vector<double>)>>&;
 using Formula = std::function<double(Arguments, CustomFunctions)>;
 ```
 
@@ -86,24 +86,23 @@ Except that the member `added` is inaccessible from anywhere else but the `opear
 ### How `std::function` works
 This is not a working or standard-compliant implementation, it just illustrates how it works:
 ```C++
-template<typename Func>
-struct function {
-	using rettype = typename return_type<Func>::type; // Not implementing these here
-	using arguments = typename argument_type<Func>::type...;
+template <typename Whatever> struct function;
 
+template<typename Returned, typename... Args>
+struct function<Returned(Args...)> {
 	struct Payload {
-		virtual rettype call(arguments... args) = 0;
+		virtual Returned call(Args... args) = 0;
 	}
 	Payload* payload; // this is deepcopied in copy constructor and properly destroyed
 
-	rettype operator() (arguments&&... args) {
-		content.call(args...);
+	Returned operator() (Args&&... args) {
+		payload->call(args...);
 	}
 	template <typename From>
 	function(From from) {
 		struct PayloadSpecific : Payload {
 			From contents;
-			rettype call(arguments... args) override {
+			Returned call(Args... args) override {
 				return From(args...)
 			}
 			PayloadSpecific(From&& from) : contents(from) {
@@ -112,6 +111,37 @@ struct function {
 		payload = new PayloadSpecific(from);
 	}
 //...
+```
+
+---
+#### A more lightweight version for small trivially copyable closures
+
+No dynamic allocation, no virtual functions. Function pointers are unavoidable.
+```C++
+template <typename T, size_t bufferSize = sizeof(void*) * 2>
+class Function;
+
+template <typename Returned, size_t bufferSize, typename... Args>
+class Function<Returned(Args...), bufferSize> {
+  Returned (*_called)(const void*, Args...) = nullptr;
+  uint8_t _data[bufferSize];
+public:
+  Function() = default;
+  
+  template <typename T, decltype(Returned(std::declval<T>()(std::declval<Args>()...)))* = nullptr>
+  Function(const T& set) {
+    static_assert(std::is_trivially_copyable_v<T>, "Only trivially copyable types can be captured.");
+    static_assert(sizeof(T) <= bufferSize, "Class too large to fit");
+    _called = [](const void* data, Args... args) {
+      return reinterpret_cast<const T*>(data)->operator()(args...);
+    };
+    new (_data) T(set);
+  }
+
+  Returned operator()(Args... args) const {
+    return _called(reinterpret_cast<const void*>(_data), args...);
+  }
+};
 ```
 
 ---
@@ -142,7 +172,7 @@ std::shared_ptr<std::unique_ptr<std::function<int()>>> capture
 });
 ```
 
-There is, however, a little problem with circular reference that requires explicitly resetting the `unique_ptr`.
+There is, however, a little problem that a certain circular reference requires explicitly resetting the `unique_ptr`.
 
 ---
 ### Exercise
