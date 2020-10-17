@@ -82,7 +82,7 @@ bool canAddIntToString = is_addable<std::string, int>::value;
 
 ---
 ## Static assert
-Type errors can get through multiple template function calls, causing long backtraces even in case of petty errors. This can be prevented using `static_assert` which stops the compilation of a function or class and causes the compiler to write an error message with a backtrace up to the point where the `static_assert` failed.
+Type errors can get through multiple template function calls, causing long backtraces even in case of petty errors. This can be mitigated using `static_assert` which the compiler to write an error message with a backtrace only to the point where the `static_assert` failed.
 ```C++
 template <typename T>
 void addComponent(const T& added) {
@@ -177,12 +177,13 @@ Create a function that can be used to [calculate the greatest common divisor of 
 
 ---
 ### Exercise 2:
-Use `if constexpr` and recursion to create a function that sorts its arguments (given by reference). Use bubblesort for simplicity.
+Use `if constexpr` and recursion to create a function that sorts its arguments.
 ```C++
 // Variables lowest, lower, upper, highest are in undefined order
-staticSort(lowest, lower, upper, highest);
+staticSort<lowest, lower, upper, highest>();
 // Now lowest < lower < upper < highest
 ```
+If you choose to implement bubblesort, use the fact that you can it's difficult to manipulate elements in the middle of an argument pack, but it's easy to rotate the whole argument pack by moving an element to the back.
 
 ---
 ## Side effects
@@ -193,7 +194,7 @@ However, there is a way to get around it and cause compilation to have side effe
 It's unlikely to be ever used by accident and multiple assignment is not possible, so it's quite safe to work with. The possibility is subject to defect report 2118, but no work is being done to change it as there've been no good suggestion what to do with it.
 
 ---
-The trick is that the function can be forward declared and defined as a friend method of a template wherever it's instantiated.
+The trick is that the function can be forward-declared and defined as a friend method of a template wherever it's instantiated.
 
 ```C++
 int compiledA();
@@ -241,13 +242,13 @@ Because C++ templates can be used to implement both conditions and loops, they a
 * Any algorithm can be executed in compile time (a game of Tetris and a raytracer have been implemented already)
 * Complexity is relevant also to compilation times
 
-Its internal logic (but not syntax) is similar to Haskell. Because Haskell's syntax is better suited for this kind of programming, knowing how to write algorithms in Haskell is useful for C++ template metaprogramming.
+Its internal logic (but not syntax) is similar to Haskell. Because Haskell's syntax is better suited for this kind of programming, practicing how to write algorithms in Haskell is useful for C++ template metaprogramming.
 
 ---
 ## Limitations of template metaprogramming
 Compile time operations cannot work with:
-* floating point numbers - can be zero shifted or expressed as pairs of numerator or denominator
-* strings - can be processed as packs of `char` variables, but there is no way to deal with a string in double quotes, so a last resort option is to write it as `toUpper<'h', 'e', 'l', 'l', 'o'>()`
+* floating point numbers - can be used as values, but not as template arguments
+* strings - can be processed as packs or arrays of `char` variables, but there is no way to deal with a string in double quotes as template arguments, so a last resort option is to write it as `toUpper<'h', 'e', 'l', 'l', 'o'>()` (until C++20)
 * pointers - rarely needed, but if pointer arithmetic was available at compile time, it could be used to learn the system's endianness at compile time
 
 Of course, it is possible to use compile time algorithms to generate code that uses strings, pointers and floating point numbers.

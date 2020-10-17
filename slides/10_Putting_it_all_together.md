@@ -56,6 +56,95 @@ Most of the magic lies in the return value of `key()`. It has to be an auxiliary
 Implement the type returned by the `key()` member function. Create only skeleton class for the remaining functionality so that it would compile without taking too much work. You do not need to deal with any corner cases like initialising containers.
 
 ---
+### Can it be done better?
+The previous example has a big problem - all member classes have to be serialised (or all member classes that are not serialised need to be explicitly tagged as such).
+
+Well, it can.
+
+---
+#### The power of garbage
+When the `key()` method is called, it's possible to check out where was the last byte initialised before and to check later which was the first byte initialised after it.
+
+This requires creating the class inside garbage. However, this isn't so easy:
+```C++
+CenteringAmplifier amplifier; // Members without initialisation are not initialised
+CenteringAmplifier amplifier2(); // All members are initialised (memset to 0)
+CenteringAmplifier amplifier3(config.amplifier); // All members are initialised
+```
+
+There is no way to create an object that takes arguments inside garbage. Furthermore, members can happen to be initialised to the same values as the garbage.
+
+---
+The parent class can use CRTP to know the child's size and fill it with garbage at the end of its constructor.
+
+If the class is created twice, each time in a different garbage, it's possible to tell garbage from values that happen to the same value as garbage.
+
+![Memory layout of multiple inheritance](../pictures/garbage_overwrite.png)
+
+You can try the class analysing code online [here](https://repl.it/repls/UnusedImperturbableRam).
+
+---
+#### A place for stateful metaprogramming
+This can be used to iterate through members more efficiently, but it does not allow naming or otherwise tagging the members.
+
+A class can be aggregate initialised with types that have an universal conversion operator (let's assume it's called `ObjectInspector`).
+
+```C++
+// Partial template specialisation for recursively finding member count
+template <typename T, typename sfinae, size_t... indexes>
+struct MemberCounter {
+  constexpr static size_t get() {
+    return sizeof...(indexes) - 1;
+  }
+};
+
+template <typename T, size_t... indexes>
+struct MemberCounter<T, decltype( T {ObjectInspector<T, indexes>()...} )*, indexes...> {
+  constexpr static size_t get() {
+    return MemberCounter<T, T*, indexes..., sizeof...(indexes)>::get();
+  }
+};
+```
+
+---
+We can then use stateful metaprogramming to store what types these actually converted to and use it to generate a set of conversion functions:
+```C++
+// Forward declares for ADL
+template<typename T, int N> struct ObjectGetter {
+ 	friend void processMember(ObjectGetter<T, N>, T* instance, size_t offset);
+  friend constexpr int memberSize(ObjectGetter<T, N>);
+};
+
+// The class that adds implementations according to its parametres
+template<typename T, int N, typename Stored>
+struct ObjectDataStorage {
+  friend void processMember(ObjectGetter<T, N>, T* instance, size_t offset) {
+    std::cout << N << ": " << *reinterpret_cast<Stored*>(reinterpret_cast<uint8_t*>(instance) + offset) << std::endl;
+  };
+  friend constexpr int memberSize(ObjectGetter<T, N>) {
+    return sizeof(Stored);
+  }
+};
+
+// The class whose conversions cause instantiations of ObjectDataStorage
+template<typename T, int N>
+struct ObjectInspector {
+  template <typename Inspected, std::enable_if_t<sizeof(ObjectDataStorage<T, N, Inspected>) != -1>* = nullptr>
+  operator Inspected() {
+    return Inspected{};
+  }
+};
+```
+
+---
+Finally, we can iterate through all those functions while predicting the layout (which can all be done at compile time).
+
+This can only serialise objects as JSON arrays. The previous method can be used to insert names to the members, while using this method to improve performance and as a double check.
+
+An implementation of this mechanism is [here](https://repl.it/repls/YellowgreenThriftyScientificcomputing).
+
+
+---
 ## JSON-RPC
 The use case is to have an abstraction that unifies access to local objects and remote objects. We want to have a class that can be used in two ways:
 1. The class' methods access its internal attributes as usual, but can also be called through TCP (or UDP)
@@ -63,7 +152,7 @@ The use case is to have an abstraction that unifies access to local objects and 
 
 The aim is to have a layer of abstraction that hides if the object is local or remote and to do it with as little code as possible.
 
-JSON-RPC protocol assumes sending requests with method name and parametres and receives a reply with procedure name, response parametres and an optional error message. It can be used internally by this remote communication. The parametres can be of any type, but in this case, an array is the most suitable. We need to find a way to generate bindings for classes witout too much code.
+JSON-RPC protocol assumes sending requests with method name and parametres and receives a reply with procedure name, response parametres and an optional error message. It can be used internally by this remote communication. The parametres can be of any type, but in this case, an array is the most suitable. We need to find a way to generate bindings for classes without too much code.
 
 ---
 ### OOP implementation
@@ -126,7 +215,7 @@ class RemoteMethod //...
 
 ---
 ### Exercise
-Implement the last iteration of the `Device` class. You don't have to write the methods that actually serialise and deserialise the arguments, only what is necessary to get the `rpcMethod` method working.
+Implement the last iteration of the `Device` class. You don't have to write the methods that actually serialise and deserialise the arguments or send the information (it would take long), only what is necessary to get the `rpcMethod` method working.
 
 ---
 ## GUI
@@ -172,10 +261,6 @@ So now, how it works?
 
 ---
 ## Homework
-Clone the [repository](https://github.com/Dugy/DuGUI) and make a merge request with a small improvement of your choice
-
----
-## Alternate homework
 Design and implement a small library for parsing command line arguments that is as easy to use and needs as little code as possible.
 ```
 ./railgun enemies.csv -tbf --auto-aim --multitarget 3 -p priority_rules.conf
