@@ -31,7 +31,7 @@ std::string address = key("address") = "192.168.4.14";
 
 If there was a constructor, one of the lines it its initialisation part would look like this:
 ```C++
-address(key("address") = "192.168.4.14"),
+std::string address(key("address") = "192.168.4.14"),
 ```
 
 Thus, the order is:
@@ -40,7 +40,7 @@ Thus, the order is:
 3. The member variable `address` is initialised with the result of the assignment
 
 ---
-The `key()` function can be a member function of `Serialisable`. All parent classes are fully initialised when anything inside the child class is initialised. Therefore, it's ready for saving information about the members when it's needed.
+The `key()` function can be a member function of `Serialisable`. All parent classes are fully initialised when anything inside the child class is initialised. Therefore, it's capable of saving information about the members when it's needed.
 
 ---
 Most of the magic lies in the return value of `key()`. It has to be an auxiliary class with some special functionality:
@@ -53,7 +53,7 @@ Most of the magic lies in the return value of `key()`. It has to be an auxiliary
 
 ---
 ### Exercise
-Implement the type returned by the `key()` member function. Create only skeleton class for the remaining functionality so that it would compile without taking too much work. You do not need to deal with any corner cases like initialising containers.
+Implement the type returned by the `key()` member function. Create only a skeleton class for the remaining functionality so that it would compile without taking too much work. You do not need to deal with any corner cases like initialising containers.
 
 ---
 ### Can it be done better?
@@ -185,14 +185,14 @@ class LaserCutter : public Device {
 	}
 public:
 	void setPosition(float x, float y) {
-		if (remote()) call("setPosition", x, y);
+		if (remote()) return call("setPosition", x, y);
 		// ...
 	}
 	void setPower(float power_mw) {
-		if (remote()) call("setPower", power_mw);
+		if (remote()) return call("setPower", power_mw);
 		// ...
 	}
-}`
+};
 ```
 This no longer requires implementing two extra classes to create the abstraction, but there's still a lot of repetitive code. It would be handy to be able to swap methods dynamically.
 
